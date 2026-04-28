@@ -14,8 +14,10 @@ import ZKPProofPanel from "@/components/ZKPProofPanel";
 import E2EEncryptPanel from "@/components/E2EEncryptPanel";
 import IPFSStoragePanel from "@/components/IPFSStoragePanel";
 import DPAnalyticsPanel from "@/components/DPAnalyticsPanel";
+import SteganographyPanel from "@/components/SteganographyPanel";
+import HomomorphicPanel from "@/components/HomomorphicPanel";
 import { motion } from "framer-motion";
-import { Shield, Lock, Database, BarChart2, Zap, ExternalLink } from "lucide-react";
+import { Shield, Lock, Database, BarChart2, Zap, ExternalLink, EyeOff, Cpu } from "lucide-react";
 
 const HERO_BG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663332318761/Lc9psW6cNr5xUfrXrGkTUX/hero-bg-ZJayaXRxyCQiW3V7DUYdu6.webp";
 const ZKP_IMG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663332318761/Lc9psW6cNr5xUfrXrGkTUX/zkp-visual-hhZ9oGLX3SWffqvs9kfjBA.webp";
@@ -28,6 +30,8 @@ const techStack = [
   { name: 'IPFS / Pinata', desc: 'Decentralized storage', href: 'https://pinata.cloud', color: 'oklch(0.51 0.24 264)' },
   { name: 'DID:PKH', desc: 'W3C Decentralized ID', href: 'https://www.w3.org/TR/did-core/', color: 'oklch(0.7 0.17 162)' },
   { name: 'Laplace DP', desc: 'Differential privacy', href: 'https://opendp.org', color: 'oklch(0.75 0.18 75)' },
+  { name: 'LSB Stego', desc: 'Image steganography', href: 'https://en.wikipedia.org/wiki/Steganography', color: 'oklch(0.51 0.24 264)' },
+  { name: 'BFV / SEAL', desc: 'Homomorphic encryption', href: 'https://github.com/s0l0ist/node-seal', color: 'oklch(0.75 0.18 75)' },
 ];
 
 const architectureItems = [
@@ -54,6 +58,18 @@ const architectureItems = [
     title: 'Decentralized Storage',
     desc: 'Encrypted ciphertext is pinned to IPFS. The CID (content hash) is stored server-side. Personal data never goes on-chain — blockchain data is immutable.',
     color: 'oklch(0.51 0.24 264)',
+  },
+  {
+    icon: EyeOff,
+    title: 'Steganography',
+    desc: 'Secret messages are hidden inside image pixels using LSB substitution. The image looks identical to the human eye (PSNR >50 dB). Combine with AES encryption for double protection.',
+    color: 'oklch(0.51 0.24 264)',
+  },
+  {
+    icon: Cpu,
+    title: 'Homomorphic Encryption',
+    desc: 'BFV scheme allows the server to perform arithmetic (addition, multiplication) on encrypted data without ever decrypting it. Enables private voting, private ML inference, and encrypted databases.',
+    color: 'oklch(0.75 0.18 75)',
   },
   {
     icon: BarChart2,
@@ -165,12 +181,26 @@ export default function Home() {
               <IPFSStoragePanel />
             </motion.div>
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.35 }}
-            >
-              <DPAnalyticsPanel />
-            </motion.div>
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.35 }}
+          >
+            <DPAnalyticsPanel />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.45 }}
+          >
+            <SteganographyPanel />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.55 }}
+          >
+            <HomomorphicPanel />
+          </motion.div>
           </div>
         </div>
       </section>
