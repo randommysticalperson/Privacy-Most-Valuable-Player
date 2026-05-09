@@ -1,12 +1,7 @@
 /**
  * App.tsx — Root Application
  * Design: Zero-Knowledge Glass — Dark Space Glassmorphism
- * Theme: Dark (near-black background)
- *
- * Auth: MetaMask Embedded Wallets SDK via @web3auth/modal/react
- *   - Web3AuthProvider wraps the entire app
- *   - useWeb3AuthConnect / useWeb3AuthDisconnect / useWeb3AuthUser hooks
- *     are available anywhere inside the provider
+ * Theme: Dark (near-black #080C14 background)
  */
 
 import { Toaster } from "@/components/ui/sonner";
@@ -15,9 +10,8 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { WalletProvider } from "./contexts/WalletContext";
 import { SemaphoreProvider } from "./contexts/SemaphoreContext";
-import { Web3AuthProvider } from "@web3auth/modal/react";
-import { web3AuthContextConfig } from "./lib/web3authConfig";
 import Home from "./pages/Home";
 
 function Router() {
@@ -34,8 +28,7 @@ function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark">
-        {/* MetaMask Embedded Wallets SDK Provider */}
-        <Web3AuthProvider config={web3AuthContextConfig}>
+        <WalletProvider>
           <SemaphoreProvider>
             <TooltipProvider>
               <Toaster
@@ -53,7 +46,7 @@ function App() {
               <Router />
             </TooltipProvider>
           </SemaphoreProvider>
-        </Web3AuthProvider>
+        </WalletProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

@@ -1,428 +1,243 @@
 /**
- * ThreadView — Individual thread with posts and reply composer
- * Design: Zero-Knowledge Glass — Dark Space Glassmorphism
+ * ThreadView — Thread detail view with encrypted reply composer
  */
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import {
-  ArrowLeft, Heart, Reply, Lock, Zap, EyeOff, Database, Shield, Cpu,
-  Copy, CheckCircle2, AlertCircle, Send, RefreshCw, Image
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'sonner';
-import { useWeb3AuthConnect, useWeb3AuthUser } from '@web3auth/modal/react';
-import {
-  SEED_POSTS,
-  CATEGORY_LABELS,
-  CATEGORY_COLORS,
-  formatRelativeTime,
-  generateAlias,
-  type ForumThread,
-  type ForumPost,
-  type PrivacyBadge,
-} from '@/lib/forumStore';
-import { generateAESKey, encryptData, exportAESKey } from '@/lib/e2eEncryption';
-import { generateCarrierImage, encodeMessage } from '@/lib/steganography';
+import { useState } from "react";
+import { ArrowLeft, Lock, Eye, Send, Heart, Copy, RefreshCw, Zap, Database, Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import { useWeb3AuthUser, useWeb3AuthConnect } from "@/contexts/WalletContext";
+import { generateAESKey, encryptData, exportAESKey } from "@/lib/e2eEncryption";
+import { generateCarrierImage, encodeMessage } from "@/lib/steganography";
+import { SEED_POSTS, formatRelativeTime, type ForumThread, type ForumPost, type PrivacyBadge } from "@/lib/forumStore";
 
-const BADGE_CONFIG: Record<PrivacyBadge, { icon: React.ElementType; label: string; color: string; desc: string }> = {
-  'zkp-verified': { icon: Zap, label: 'ZKP Verified', color: 'oklch(0.75 0.18 75)', desc: 'Identity proven via Semaphore ZKP' },
-  'encrypted': { icon: Lock, label: 'E2E Encrypted', color: 'oklch(0.7 0.17 162)', desc: 'AES-GCM-256 encrypted before storage' },
-  'stego': { icon: EyeOff, label: 'Stego Hidden', color: 'oklch(0.51 0.24 264)', desc: 'Message hidden in image via LSB' },
-  'he-computed': { icon: Cpu, label: 'HE Computed', color: 'oklch(0.75 0.18 75)', desc: 'Computed on encrypted data (BFV)' },
-  'ipfs-pinned': { icon: Database, label: 'IPFS Pinned', color: 'oklch(0.51 0.24 264)', desc: 'Stored on IPFS (CID: QmX...)' },
-  'did-auth': { icon: Shield, label: 'DID Auth', color: 'oklch(0.7 0.17 162)', desc: 'Authenticated via DID:PKH' },
+const BADGE_CONFIG: Record<PrivacyBadge, { icon: React.ElementType; color: string; label: string }> = {
+  "zkp-verified": { icon: Zap,      color: "oklch(0.75 0.18 75)",  label: "ZKP" },
+  "encrypted":    { icon: Lock,     color: "oklch(0.7 0.17 162)",  label: "E2E" },
+  "ipfs-stored":  { icon: Database, color: "oklch(0.51 0.24 264)", label: "IPFS" },
+  "did-auth":     { icon: Shield,   color: "oklch(0.51 0.24 264)", label: "DID" },
+  "stego":        { icon: Eye,      color: "oklch(0.7 0.17 162)",  label: "Stego" },
 };
 
 interface ThreadViewProps {
   thread: ForumThread;
   onBack: () => void;
-  extraPosts?: ForumPost[];
-  onPostAdded?: (post: ForumPost) => void;
+  extraPosts: ForumPost[];
+  onPostAdded: (post: ForumPost) => void;
 }
 
-export default function ThreadView({ thread, onBack, extraPosts = [], onPostAdded }: ThreadViewProps) {
-  const { isConnected } = useWeb3AuthConnect();
-  const { userInfo } = useWeb3AuthUser();
-  const [replyContent, setReplyContent] = useState('');
+export default function ThreadView({ thread, onBack, extraPosts, onPostAdded }: ThreadViewProps) {
+  const { userInfo, isConnected } = useWeb3AuthUser();
+  const { connect } = useWeb3AuthConnect();
+  const [content, setContent] = useState("");
   const [useEncryption, setUseEncryption] = useState(true);
   const [useStego, setUseStego] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
-  const [localPosts, setLocalPosts] = useState<ForumPost[]>([]);
 
-  const threadPosts = [
-    ...SEED_POSTS.filter(p => p.threadId === thread.id),
-    ...extraPosts.filter(p => p.threadId === thread.id),
-    ...localPosts,
-  ];
-
-  const userAlias = userInfo?.email
-    ? generateAlias(userInfo.email)
-    : userInfo?.name
-    ? generateAlias(userInfo.name)
-    : `anon-${Math.random().toString(16).slice(2, 8)}`;
-
-  const handleLike = (postId: string) => {
-    setLikedPosts(prev => {
-      const next = new Set(prev);
-      if (next.has(postId)) next.delete(postId);
-      else next.add(postId);
-      return next;
-    });
-  };
+  const seedPosts = SEED_POSTS.filter(p => p.threadId === thread.id);
+  const threadExtraPosts = extraPosts.filter(p => p.threadId === thread.id);
+  const allPosts = [...seedPosts, ...threadExtraPosts];
 
   const handlePost = async () => {
-    if (!replyContent.trim()) return;
+    if (!content.trim()) return;
     setIsPosting(true);
-
     try {
-      const badges: PrivacyBadge[] = ['did-auth'];
-      let content = replyContent;
+      const badges: PrivacyBadge[] = ["did-auth"];
       let encryptedContent: string | undefined;
       let stegoImage: string | undefined;
-      let exportedKey: string | undefined;
 
       if (useEncryption) {
+        badges.push("encrypted");
         const key = await generateAESKey();
-        const encrypted = await encryptData(replyContent, key);
-        encryptedContent = JSON.stringify(encrypted);
-        exportedKey = await exportAESKey(key);
-        badges.push('encrypted');
-        // Show encrypted version in post
-        content = `[E2E ENCRYPTED]\n\nThis message is encrypted with AES-GCM-256. Only users with the key can decrypt it.\n\nKey: ${exportedKey.slice(0, 20)}...`;
+        const payload = await encryptData(content, key);
+        encryptedContent = payload.ciphertext;
+        const exportedKey = await exportAESKey(key);
+        toast.success("Post encrypted. Save your key: " + exportedKey.slice(0, 16) + "...", { duration: 8000 });
       }
 
       if (useStego) {
-        const carrier = generateCarrierImage(300, 200);
-        const result = await encodeMessage(carrier, replyContent);
+        badges.push("stego");
+        const carrier = generateCarrierImage(200, 150);
+        const result = await encodeMessage(carrier, content.slice(0, 100));
         stegoImage = result.imageDataUrl;
-        badges.push('stego');
       }
 
-      const newPost: ForumPost = {
+      const post: ForumPost = {
         id: `post-${Date.now()}`,
         threadId: thread.id,
-        authorAlias: userAlias,
-        content,
+        authorAlias: userInfo?.alias ?? "anon",
+        content: useEncryption ? "[Encrypted content — key required to decrypt]" : content,
         encryptedContent,
         stegoImage,
         badges,
         timestamp: Date.now(),
         likes: 0,
-        isEncrypted: useEncryption,
-        isAnonymous: true,
       };
 
-      setLocalPosts(prev => [...prev, newPost]);
-      onPostAdded?.(newPost);
-      setReplyContent('');
-
-      if (exportedKey) {
-        toast.success('Post encrypted! Save your key: ' + exportedKey.slice(0, 16) + '...', { duration: 8000 });
-      } else {
-        toast.success('Reply posted anonymously');
-      }
+      onPostAdded(post);
+      setContent("");
+      if (!useEncryption) toast.success("Reply posted anonymously");
     } catch (err) {
-      toast.error('Failed to post: ' + (err instanceof Error ? err.message : String(err)));
+      toast.error("Failed to post reply");
     } finally {
       setIsPosting(false);
     }
   };
 
+  const toggleLike = (postId: string) => {
+    setLikedPosts(prev => {
+      const next = new Set(prev);
+      if (next.has(postId)) next.delete(postId); else next.add(postId);
+      return next;
+    });
+  };
+
   return (
     <div className="space-y-4">
-      {/* Back button + thread header */}
-      <div className="space-y-3">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Back to threads
-        </button>
+      <button
+        onClick={onBack}
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="w-3.5 h-3.5" />Back to threads
+      </button>
 
-        <div className="p-4 rounded-xl border border-border bg-[oklch(0.1_0.01_265/0.6)]">
-          <div className="flex items-start gap-3">
-            <span
-              className="w-2 h-2 rounded-full mt-2 shrink-0"
-              style={{ background: CATEGORY_COLORS[thread.category] }}
-            />
-            <div>
-              <h1 className="text-base font-semibold text-foreground leading-snug" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                {thread.title}
-              </h1>
-              <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                <span className="text-[10px] font-mono text-muted-foreground">{thread.authorAlias}</span>
-                <span
-                  className="text-[10px] px-1.5 py-0.5 rounded border"
-                  style={{
-                    color: CATEGORY_COLORS[thread.category],
-                    borderColor: `${CATEGORY_COLORS[thread.category]}40`,
-                    background: `${CATEGORY_COLORS[thread.category]}10`,
-                  }}
-                >
-                  {CATEGORY_LABELS[thread.category]}
-                </span>
-                <div className="flex items-center gap-1">
-                  {thread.badges.map(badge => {
-                    const cfg = BADGE_CONFIG[badge];
-                    return (
-                      <span
-                        key={badge}
-                        className="flex items-center gap-0.5 text-[9px] px-1 py-0.5 rounded border"
-                        style={{ color: cfg.color, borderColor: `${cfg.color}30`, background: `${cfg.color}10` }}
-                        title={cfg.desc}
-                      >
-                        <cfg.icon className="w-2.5 h-2.5" />
-                        {cfg.label}
-                      </span>
-                    );
-                  })}
-                </div>
-                <span className="text-[10px] text-muted-foreground">{formatRelativeTime(thread.timestamp)}</span>
-              </div>
-            </div>
-          </div>
+      <div className="p-4 rounded-xl border border-[oklch(0.51_0.24_264/0.25)] bg-[oklch(0.51_0.24_264/0.06)]">
+        <h1 className="text-base font-semibold text-foreground leading-snug" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+          {thread.title}
+        </h1>
+        <div className="flex items-center gap-2 mt-2 flex-wrap">
+          <span className="text-[10px] font-mono text-muted-foreground">{thread.authorAlias}</span>
+          {thread.badges.map(badge => {
+            const cfg = BADGE_CONFIG[badge];
+            return (
+              <span key={badge} className="text-[10px] px-1.5 py-0.5 rounded border flex items-center gap-0.5"
+                style={{ color: cfg.color, borderColor: `${cfg.color}40` }}>
+                <cfg.icon className="w-2.5 h-2.5" />{cfg.label}
+              </span>
+            );
+          })}
+          {thread.tags.map(tag => (
+            <span key={tag} className="text-[10px] text-muted-foreground">{tag}</span>
+          ))}
         </div>
       </div>
 
-      {/* Posts */}
       <div className="space-y-3">
-        {threadPosts.map((post, i) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            isLiked={likedPosts.has(post.id)}
-            onLike={() => handleLike(post.id)}
-            index={i}
-          />
-        ))}
+        {allPosts.map(post => (
+          <div key={post.id} className="p-4 rounded-xl border border-border bg-[oklch(0.11_0.01_265/0.5)]">
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-[oklch(0.51_0.24_264/0.2)] border border-[oklch(0.51_0.24_264/0.4)] flex items-center justify-center">
+                  <span className="text-[9px] font-bold text-[oklch(0.51_0.24_264)]">
+                    {post.authorAlias.slice(0, 1).toUpperCase()}
+                  </span>
+                </div>
+                <span className="text-[11px] font-mono text-muted-foreground">{post.authorAlias}</span>
+                <span className="text-[10px] text-muted-foreground">{formatRelativeTime(post.timestamp)}</span>
+              </div>
+              <div className="flex items-center gap-1 flex-wrap justify-end">
+                {post.badges.map(badge => {
+                  const cfg = BADGE_CONFIG[badge];
+                  return (
+                    <span key={badge} className="text-[9px] px-1 py-0.5 rounded border flex items-center gap-0.5"
+                      style={{ color: cfg.color, borderColor: `${cfg.color}40` }}>
+                      <cfg.icon className="w-2 h-2" />{cfg.label}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
 
-        {threadPosts.length === 0 && (
-          <div className="text-center py-10 text-muted-foreground">
-            <p className="text-sm">No replies yet. Be the first to respond.</p>
+            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{post.content}</p>
+
+            {post.encryptedContent && (
+              <div className="mt-2 p-2 rounded-lg bg-[oklch(0.7_0.17_162/0.06)] border border-[oklch(0.7_0.17_162/0.2)]">
+                <p className="text-[10px] font-mono text-[oklch(0.7_0.17_162)] truncate">{post.encryptedContent.slice(0, 40)}...</p>
+              </div>
+            )}
+
+            {post.stegoImage && (
+              <div className="mt-2">
+                <img src={post.stegoImage} alt="stego" className="w-24 h-18 rounded-lg border border-border object-cover" />
+                <p className="text-[9px] text-muted-foreground mt-0.5">Stego image attached</p>
+              </div>
+            )}
+
+            {post.ipfsCid && (
+              <p className="text-[9px] font-mono text-muted-foreground mt-1">IPFS: {post.ipfsCid}</p>
+            )}
+
+            <div className="flex items-center gap-3 mt-3">
+              <button
+                onClick={() => toggleLike(post.id)}
+                className={`flex items-center gap-1 text-[11px] transition-colors ${likedPosts.has(post.id) ? "text-[oklch(0.65_0.22_25)]" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <Heart className={`w-3.5 h-3.5 ${likedPosts.has(post.id) ? "fill-current" : ""}`} />
+                {post.likes + (likedPosts.has(post.id) ? 1 : 0)}
+              </button>
+              <button
+                onClick={() => { navigator.clipboard.writeText(post.content); toast.success("Copied"); }}
+                className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Copy className="w-3.5 h-3.5" />Copy
+              </button>
+            </div>
           </div>
-        )}
+        ))}
       </div>
 
-      {/* Reply composer */}
       {isConnected ? (
-        <div className="p-4 rounded-xl border border-border bg-[oklch(0.1_0.01_265/0.6)] space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-[oklch(0.7_0.17_162/0.2)] flex items-center justify-center">
-              <span className="text-[10px] font-mono text-[oklch(0.7_0.17_162)]">
-                {userAlias.slice(0, 2).toUpperCase()}
-              </span>
-            </div>
-            <span className="text-xs font-mono text-muted-foreground">{userAlias}</span>
-            <Badge className="bg-[oklch(0.7_0.17_162/0.1)] text-[oklch(0.7_0.17_162)] text-[9px] px-1.5 border border-[oklch(0.7_0.17_162/0.3)]">
-              anonymous
-            </Badge>
-          </div>
-
+        <div className="p-4 rounded-xl border border-border bg-[oklch(0.11_0.01_265/0.5)] space-y-3">
+          <p className="text-xs font-medium text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            Reply as <span className="font-mono text-[oklch(0.7_0.17_162)]">{userInfo?.alias}</span>
+          </p>
           <Textarea
-            value={replyContent}
-            onChange={e => setReplyContent(e.target.value)}
-            placeholder="Write your reply... (your identity is protected by ZKP)"
+            value={content}
+            onChange={e => setContent(e.target.value)}
+            placeholder="Write your reply..."
             className="bg-[oklch(0.14_0.015_265/0.5)] border-border text-sm resize-none h-24"
           />
-
-          {/* Privacy options */}
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-4">
             <label className="flex items-center gap-2 cursor-pointer">
-              <div
-                onClick={() => setUseEncryption(v => !v)}
-                className={`w-8 h-4.5 rounded-full transition-all duration-200 relative flex items-center ${
-                  useEncryption ? 'bg-[oklch(0.7_0.17_162)]' : 'bg-[oklch(1_0_0/0.1)]'
-                }`}
-              >
-                <span className={`absolute w-3.5 h-3.5 rounded-full bg-white transition-all duration-200 ${
-                  useEncryption ? 'left-[18px]' : 'left-0.5'
-                }`} />
+              <div onClick={() => setUseEncryption(v => !v)}
+                className={`w-7 h-3.5 rounded-full transition-all relative flex items-center ${useEncryption ? "bg-[oklch(0.7_0.17_162)]" : "bg-[oklch(1_0_0/0.1)]"}`}>
+                <span className={`absolute w-2.5 h-2.5 rounded-full bg-white transition-all ${useEncryption ? "left-[14px]" : "left-0.5"}`} />
               </div>
-              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                <Lock className="w-3 h-3 text-[oklch(0.7_0.17_162)]" />
-                Encrypt post (AES-GCM)
+              <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                <Lock className="w-3 h-3" />E2E Encrypt
               </span>
             </label>
-
             <label className="flex items-center gap-2 cursor-pointer">
-              <div
-                onClick={() => setUseStego(v => !v)}
-                className={`w-8 h-4.5 rounded-full transition-all duration-200 relative flex items-center ${
-                  useStego ? 'bg-[oklch(0.51_0.24_264)]' : 'bg-[oklch(1_0_0/0.1)]'
-                }`}
-              >
-                <span className={`absolute w-3.5 h-3.5 rounded-full bg-white transition-all duration-200 ${
-                  useStego ? 'left-[18px]' : 'left-0.5'
-                }`} />
+              <div onClick={() => setUseStego(v => !v)}
+                className={`w-7 h-3.5 rounded-full transition-all relative flex items-center ${useStego ? "bg-[oklch(0.51_0.24_264)]" : "bg-[oklch(1_0_0/0.1)]"}`}>
+                <span className={`absolute w-2.5 h-2.5 rounded-full bg-white transition-all ${useStego ? "left-[14px]" : "left-0.5"}`} />
               </div>
-              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                <EyeOff className="w-3 h-3 text-[oklch(0.51_0.24_264)]" />
-                Hide in image (Stego)
+              <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                <Eye className="w-3 h-3" />Stego Image
               </span>
             </label>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] text-muted-foreground">
-              Your post is signed with your ZKP identity. The server cannot link this to your wallet address.
-            </p>
+            <div className="flex-1" />
             <Button
               onClick={handlePost}
-              disabled={!replyContent.trim() || isPosting}
+              disabled={!content.trim() || isPosting}
               size="sm"
-              className="h-8 text-xs bg-[oklch(0.51_0.24_264)] hover:bg-[oklch(0.55_0.24_264)] text-white shrink-0"
-              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+              className="h-7 text-xs bg-[oklch(0.51_0.24_264)] hover:bg-[oklch(0.55_0.24_264)] text-white"
             >
-              {isPosting ? (
-                <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-              ) : (
-                <Send className="w-3.5 h-3.5 mr-1.5" />
-              )}
-              {isPosting ? 'Posting...' : 'Post Reply'}
+              {isPosting ? <RefreshCw className="w-3 h-3 mr-1 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
+              {isPosting ? "Posting..." : "Reply"}
             </Button>
           </div>
         </div>
       ) : (
-        <div className="p-4 rounded-xl border border-dashed border-border text-center">
-          <p className="text-sm text-muted-foreground">
-            Connect your wallet to reply anonymously via ZKP identity.
-          </p>
+        <div className="p-4 rounded-xl border border-border text-center space-y-2">
+          <p className="text-xs text-muted-foreground">Connect your wallet to reply anonymously</p>
+          <Button onClick={connect} size="sm" variant="outline" className="h-7 text-xs border-[oklch(0.51_0.24_264/0.4)] text-[oklch(0.51_0.24_264)]">
+            Connect Wallet
+          </Button>
         </div>
       )}
     </div>
-  );
-}
-
-// Individual post card
-function PostCard({
-  post,
-  isLiked,
-  onLike,
-  index,
-}: {
-  post: ForumPost;
-  isLiked: boolean;
-  onLike: () => void;
-  index: number;
-}) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(post.content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, delay: index * 0.05 }}
-      className="p-4 rounded-xl border border-border bg-[oklch(0.1_0.01_265/0.6)]"
-    >
-      {/* Author row */}
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-7 h-7 rounded-full bg-[oklch(0.51_0.24_264/0.15)] border border-[oklch(0.51_0.24_264/0.3)] flex items-center justify-center shrink-0">
-          <span className="text-[10px] font-mono text-[oklch(0.51_0.24_264)]">
-            {post.authorAlias.slice(0, 2).toUpperCase()}
-          </span>
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-mono text-foreground">{post.authorAlias}</span>
-            {post.isAnonymous && (
-              <Badge className="bg-[oklch(0.51_0.24_264/0.1)] text-[oklch(0.51_0.24_264)] text-[9px] px-1 border border-[oklch(0.51_0.24_264/0.3)]">
-                anon
-              </Badge>
-            )}
-            {/* Privacy badges */}
-            {post.badges.map(badge => {
-              const cfg = BADGE_CONFIG[badge];
-              return (
-                <span
-                  key={badge}
-                  className="flex items-center gap-0.5 text-[9px] px-1 py-0.5 rounded border"
-                  style={{ color: cfg.color, borderColor: `${cfg.color}30`, background: `${cfg.color}10` }}
-                  title={cfg.desc}
-                >
-                  <cfg.icon className="w-2.5 h-2.5" />
-                  {cfg.label}
-                </span>
-              );
-            })}
-          </div>
-          <p className="text-[10px] text-muted-foreground">{formatRelativeTime(post.timestamp)}</p>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className={`text-sm leading-relaxed whitespace-pre-wrap ${
-        post.isEncrypted ? 'text-muted-foreground' : 'text-foreground'
-      }`}>
-        {post.isEncrypted && (
-          <div className="flex items-center gap-1.5 mb-2 text-[oklch(0.7_0.17_162)]">
-            <Lock className="w-3.5 h-3.5" />
-            <span className="text-xs font-medium">Encrypted Content</span>
-          </div>
-        )}
-        {post.content}
-      </div>
-
-      {/* Stego image */}
-      {post.stegoImage && (
-        <div className="mt-3">
-          <div className="relative inline-block">
-            <img
-              src={post.stegoImage}
-              alt="Stego image"
-              className="rounded-lg border border-border max-h-32 object-cover"
-            />
-            <div className="absolute top-1.5 right-1.5">
-              <Badge className="bg-[oklch(0.51_0.24_264/0.9)] text-white text-[9px]">
-                <EyeOff className="w-2.5 h-2.5 mr-0.5" />Hidden
-              </Badge>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* IPFS CID */}
-      {post.ipfsCid && (
-        <div className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground">
-          <Database className="w-3 h-3 text-[oklch(0.51_0.24_264)]" />
-          <span className="font-mono">{post.ipfsCid.slice(0, 20)}...</span>
-        </div>
-      )}
-
-      {/* Actions */}
-      <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border">
-        <button
-          onClick={onLike}
-          className={`flex items-center gap-1.5 text-xs transition-colors ${
-            isLiked ? 'text-[oklch(0.65_0.22_25)]' : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
-          {post.likes + (isLiked ? 1 : 0)}
-        </button>
-        <button
-          onClick={handleCopy}
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-[oklch(0.7_0.17_162)]" /> : <Copy className="w-3.5 h-3.5" />}
-          {copied ? 'Copied' : 'Copy'}
-        </button>
-        {post.authorDid && (
-          <span className="text-[10px] font-mono text-muted-foreground ml-auto truncate max-w-32" title={post.authorDid}>
-            {post.authorDid.slice(0, 20)}...
-          </span>
-        )}
-      </div>
-    </motion.div>
   );
 }
