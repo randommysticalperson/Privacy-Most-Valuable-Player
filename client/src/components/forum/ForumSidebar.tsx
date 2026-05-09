@@ -1,20 +1,13 @@
 /**
  * ForumSidebar — Left navigation sidebar for ZeroForum
+ * i18n: all labels via useI18n()
  */
 
 import { Home, TrendingUp, Users, Lock, Eye, Cpu, Database, BarChart2, Zap, Shield } from "lucide-react";
-import { CATEGORY_LABELS, CATEGORY_COLORS, type ThreadCategory } from "@/lib/forumStore";
+import { CATEGORY_COLORS, type ThreadCategory } from "@/lib/forumStore";
+import { useI18n } from "@/contexts/I18nContext";
 
 const CATEGORIES: ThreadCategory[] = ["zero-knowledge","cryptography","identity","privacy-tech","decentralized","general"];
-
-const PRIVACY_TOOLS = [
-  { path: "/tools/encrypt", label: "E2E 加密", icon: Lock },
-  { path: "/tools/stego",   label: "隱寫術",  icon: Eye },
-  { path: "/tools/he",      label: "同態加密",    icon: Cpu },
-  { path: "/tools/ipfs",    label: "IPFS 儲存",   icon: Database },
-  { path: "/tools/dp",      label: "差分隱私",  icon: BarChart2 },
-  { path: "/tools/zkp",     label: "ZKP 證明",      icon: Zap },
-];
 
 interface ForumSidebarProps {
   activeCategory: ThreadCategory | null;
@@ -27,6 +20,32 @@ interface ForumSidebarProps {
 export default function ForumSidebar({
   activeCategory, onCategorySelect, onToolSelect, activeView, onViewChange,
 }: ForumSidebarProps) {
+  const { t } = useI18n();
+
+  const CATEGORY_LABELS_I18N: Record<ThreadCategory, string> = {
+    "zero-knowledge": t("catZkp"),
+    "cryptography":   t("catCrypto"),
+    "identity":       t("catIdentity"),
+    "privacy-tech":   t("catPrivacy"),
+    "decentralized":  t("catDecentralized"),
+    "general":        t("catGeneral"),
+  };
+
+  const PRIVACY_TOOLS = [
+    { path: "/tools/encrypt", label: t("toolE2E"),   icon: Lock },
+    { path: "/tools/stego",   label: t("toolStego"), icon: Eye },
+    { path: "/tools/he",      label: t("toolHE"),    icon: Cpu },
+    { path: "/tools/ipfs",    label: t("toolIPFS"),  icon: Database },
+    { path: "/tools/dp",      label: t("toolDP"),    icon: BarChart2 },
+    { path: "/tools/zkp",     label: t("toolZKP"),   icon: Zap },
+  ];
+
+  const TOP_NAV = [
+    { labelKey: "forum" as const,    icon: Home,       view: "forum" as const },
+    { labelKey: "trending" as const, icon: TrendingUp, view: "forum" as const },
+    { labelKey: "members" as const,  icon: Users,      view: "forum" as const },
+  ];
+
   return (
     <div className="w-44 h-full flex flex-col py-3 px-2 overflow-y-auto">
       {/* Brand */}
@@ -41,35 +60,33 @@ export default function ForumSidebar({
           </span>
         </div>
         <p className="text-[9px] text-muted-foreground mt-0.5 leading-tight">
-          匿名 · 加密 · 去中心化
+          {t("appTagline")}
         </p>
       </div>
 
       {/* Top nav */}
       <div className="space-y-0.5 mb-3">
-        {[
-          { label: "論壇", icon: Home, view: "forum" as const },
-          { label: "熱門", icon: TrendingUp, view: "forum" as const },
-          { label: "成員", icon: Users, view: "forum" as const },
-        ].map(item => (
+        {TOP_NAV.map(item => (
           <button
-            key={item.label}
+            key={item.labelKey}
             onClick={() => { onViewChange(item.view); onCategorySelect(null); }}
             className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors ${
-              activeView === "forum" && !activeCategory && item.label === "論壇"
+              activeView === "forum" && !activeCategory && item.labelKey === "forum"
                 ? "bg-[oklch(0.51_0.24_264/0.12)] text-[oklch(0.51_0.24_264)]"
                 : "text-muted-foreground hover:text-foreground hover:bg-[oklch(1_0_0/0.05)]"
             }`}
           >
             <item.icon className="w-3.5 h-3.5" />
-            {item.label}
+            {t(item.labelKey)}
           </button>
         ))}
       </div>
 
-      {/* 分類 */}
+      {/* Categories */}
       <div className="mb-3">
-        <p className="text-[9px] uppercase tracking-widest text-muted-foreground px-2 mb-1.5">分類</p>
+        <p className="text-[9px] uppercase tracking-widest text-muted-foreground px-2 mb-1.5">
+          {t("sectionCategories")}
+        </p>
         <div className="space-y-0.5">
           <button
             onClick={() => { onViewChange("forum"); onCategorySelect(null); }}
@@ -80,7 +97,7 @@ export default function ForumSidebar({
             }`}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
-            全部討論
+            {t("catAll")}
           </button>
           {CATEGORIES.map(cat => (
             <button
@@ -93,7 +110,7 @@ export default function ForumSidebar({
               }`}
             >
               <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: CATEGORY_COLORS[cat] }} />
-              {CATEGORY_LABELS[cat]}
+              {CATEGORY_LABELS_I18N[cat]}
             </button>
           ))}
         </div>
@@ -101,17 +118,15 @@ export default function ForumSidebar({
 
       {/* Privacy tools */}
       <div>
-        <p className="text-[9px] uppercase tracking-widest text-muted-foreground px-2 mb-1.5">隱私工具</p>
+        <p className="text-[9px] uppercase tracking-widest text-muted-foreground px-2 mb-1.5">
+          {t("sectionTools")}
+        </p>
         <div className="space-y-0.5">
           {PRIVACY_TOOLS.map(tool => (
             <button
               key={tool.path}
               onClick={() => onToolSelect(tool.path)}
-              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors ${
-                activeView === "tools"
-                  ? "text-muted-foreground hover:text-foreground hover:bg-[oklch(1_0_0/0.05)]"
-                  : "text-muted-foreground hover:text-foreground hover:bg-[oklch(1_0_0/0.05)]"
-              }`}
+              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors text-muted-foreground hover:text-foreground hover:bg-[oklch(1_0_0/0.05)]"
             >
               <tool.icon className="w-3.5 h-3.5" />
               {tool.label}
@@ -122,7 +137,7 @@ export default function ForumSidebar({
 
       <div className="mt-auto pt-3 px-2">
         <p className="text-[9px] text-muted-foreground leading-relaxed">
-          所有帖子皆經端對端加密。身份 = ZKP 無效化符。
+          {t("appTagline")}
         </p>
       </div>
     </div>

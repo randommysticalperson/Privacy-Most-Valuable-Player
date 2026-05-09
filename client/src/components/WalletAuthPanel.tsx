@@ -2,10 +2,12 @@
  * WalletAuthPanel — DID/Wallet Authentication UI
  * Design: Zero-Knowledge Glass — Dark Space Glassmorphism
  * Trust colors: grey (disconnected) → amber (connecting) → emerald (connected)
+ * i18n: all labels via useI18n()
  */
 
 import { useWallet } from "@/contexts/WalletContext";
 import { useSemaphore } from "@/contexts/SemaphoreContext";
+import { useI18n } from "@/contexts/I18nContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Wallet, Shield, CheckCircle2, AlertCircle, Loader2, LogOut, Copy, ExternalLink } from "lucide-react";
@@ -20,6 +22,7 @@ function truncateAddress(addr: string): string {
 export default function WalletAuthPanel() {
   const { isConnected, isConnecting, address, userInfo, hasProvider, connect, disconnect } = useWallet();
   const { createIdentityFromWallet, identityInfo, status: zkpStatus } = useSemaphore();
+  const { t, lang } = useI18n();
 
   // Auto-create Semaphore identity when wallet connects
   useEffect(() => {
@@ -30,10 +33,10 @@ export default function WalletAuthPanel() {
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
-    toast.success(`${label} 已複製到剪貼簿`);
+    toast.success(`${label} ${lang === "zh" ? "已複製到剪貼簿" : "copied to clipboard"}`);
   };
 
-  const statusLabel = isConnecting ? '連接中...' : isConnected ? '已連接' : '未連接';
+  const statusLabel = isConnecting ? t("walletConnecting") : isConnected ? t("walletConnected") : (lang === "zh" ? "未連接" : "Not connected");
   const statusColor = isConnecting
     ? 'text-[oklch(0.75_0.18_75)]'
     : isConnected
@@ -46,7 +49,7 @@ export default function WalletAuthPanel() {
     : 'border-[oklch(0.6_0.01_265/0.3)]';
 
   // Step indicators
-  const steps = ['連接', '驗證', 'DID', 'ZKP 身份'];
+  const steps = [t("walletStepConnect"), t("walletStepVerify"), t("walletStepDID"), t("walletStepZKP")];
   const stepDone = (i: number) =>
     (i === 0 && isConnected) ||
     (i === 1 && isConnected) ||
@@ -66,9 +69,9 @@ export default function WalletAuthPanel() {
           </div>
           <div>
             <h3 className="font-semibold text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              錢包 / DID 登入
+              {t("walletTitle")}
             </h3>
-            <p className="text-xs text-muted-foreground">MetaMask · EIP-1193 · DID:PKH</p>
+            <p className="text-xs text-muted-foreground">{t("walletSubtitle")}</p>
           </div>
         </div>
         <Badge variant="outline" className={`text-xs ${statusColor} ${statusBorder} border`}>
@@ -100,11 +103,11 @@ export default function WalletAuthPanel() {
         <div className="flex items-start gap-2 p-3 rounded-lg bg-[oklch(0.65_0.22_25/0.1)] border border-[oklch(0.65_0.22_25/0.3)]">
           <AlertCircle className="w-4 h-4 text-[oklch(0.65_0.22_25)] mt-0.5 shrink-0" />
           <p className="text-xs text-[oklch(0.65_0.22_25)]">
-            未偵測到錢包。請安裝{' '}
+            {t("walletNotDetected")}{' '}
             <a href="https://metamask.io" target="_blank" rel="noopener noreferrer" className="underline">
               MetaMask
             </a>{' '}
-            以繼續。
+            {t("walletInstallLink")}
           </p>
         </div>
       )}
@@ -113,8 +116,7 @@ export default function WalletAuthPanel() {
       {!isConnected && !isConnecting && (
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground leading-relaxed">
-            無需使用者名稱或密碼。連接您的以太坊錢包即可登入。
-            您的身份由金鑰對衍生——不向任何伺服器傳送資料。
+            {t("walletDesc")}
           </p>
           <Button
             onClick={connect}
@@ -122,10 +124,10 @@ export default function WalletAuthPanel() {
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
             <Wallet className="w-4 h-4 mr-2" />
-            連接錢包
+            {t("walletConnect")}
           </Button>
           <p className="text-[10px] text-center text-muted-foreground">
-            支援 MetaMask、Brave Wallet、Coinbase Wallet 及任何 EIP-1193 提供商
+            {t("walletSupports")}
           </p>
         </div>
       )}
@@ -134,9 +136,9 @@ export default function WalletAuthPanel() {
       {isConnecting && (
         <div className="flex flex-col items-center gap-3 py-4">
           <Loader2 className="w-8 h-8 text-[oklch(0.75_0.18_75)] animate-spin" />
-          <p className="text-sm text-[oklch(0.75_0.18_75)]">正在請求錢包授權…</p>
+          <p className="text-sm text-[oklch(0.75_0.18_75)]">{t("walletConnecting")}</p>
           <p className="text-xs text-muted-foreground text-center max-w-xs">
-            請在您的錢包擴充套件中批准連接請求。
+            {lang === "zh" ? "請在您的錢包擴充套件中批准連接請求。" : "Please approve the connection request in your wallet extension."}
           </p>
         </div>
       )}
@@ -152,7 +154,9 @@ export default function WalletAuthPanel() {
             {/* Address */}
             <div className="p-3 rounded-lg bg-[oklch(0.7_0.17_162/0.08)] border border-[oklch(0.7_0.17_162/0.25)]">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">以太坊地址</span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                  {lang === "zh" ? "以太坊地址" : "Ethereum Address"}
+                </span>
                 <CheckCircle2 className="w-3.5 h-3.5 text-[oklch(0.7_0.17_162)]" />
               </div>
               <div className="flex items-center gap-2">
@@ -160,7 +164,7 @@ export default function WalletAuthPanel() {
                   {truncateAddress(address)}
                 </code>
                 <button
-                  onClick={() => copyToClipboard(address, 'Address')}
+                  onClick={() => copyToClipboard(address, t("walletAddress"))}
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <Copy className="w-3 h-3" />
@@ -171,7 +175,9 @@ export default function WalletAuthPanel() {
             {/* Alias */}
             <div className="p-3 rounded-lg bg-[oklch(0.75_0.18_75/0.08)] border border-[oklch(0.75_0.18_75/0.25)]">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">匿名別名</span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                  {t("walletAnonymousAlias")}
+                </span>
               </div>
               <code className="crypto-addr text-[oklch(0.85_0.005_265)]">{userInfo.alias}</code>
             </div>
@@ -179,7 +185,9 @@ export default function WalletAuthPanel() {
             {/* DID */}
             <div className="p-3 rounded-lg bg-[oklch(0.51_0.24_264/0.08)] border border-[oklch(0.51_0.24_264/0.25)]">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">W3C DID 識別符</span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                  {lang === "zh" ? "W3C DID 識別符" : "W3C DID Identifier"}
+                </span>
                 <Shield className="w-3.5 h-3.5 text-[oklch(0.51_0.24_264)]" />
               </div>
               <div className="flex items-center gap-2">
@@ -187,7 +195,7 @@ export default function WalletAuthPanel() {
                   {userInfo.did}
                 </code>
                 <button
-                  onClick={() => copyToClipboard(userInfo.did, 'DID')}
+                  onClick={() => copyToClipboard(userInfo.did, t("walletDID"))}
                   className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
                 >
                   <Copy className="w-3 h-3" />
@@ -199,7 +207,9 @@ export default function WalletAuthPanel() {
             {identityInfo && (
               <div className="p-3 rounded-lg bg-[oklch(0.75_0.18_75/0.08)] border border-[oklch(0.75_0.18_75/0.25)]">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Semaphore 承訾値</span>
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                    {lang === "zh" ? "Semaphore 承訾値" : "Semaphore Commitment"}
+                  </span>
                   <CheckCircle2 className="w-3.5 h-3.5 text-[oklch(0.75_0.18_75)]" />
                 </div>
                 <div className="flex items-center gap-2">
@@ -207,14 +217,14 @@ export default function WalletAuthPanel() {
                     {identityInfo.commitment.slice(0, 20)}…{identityInfo.commitment.slice(-10)}
                   </code>
                   <button
-                    onClick={() => copyToClipboard(identityInfo.commitment, 'Commitment')}
+                    onClick={() => copyToClipboard(identityInfo.commitment, "Commitment")}
                     className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
                   >
                     <Copy className="w-3 h-3" />
                   </button>
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-1">
-                  僅公開承訾値——私鑰永不暴露
+                  {lang === "zh" ? "僅公開承訾値——私鑰永不暴露" : "Only commitment is public — private key never exposed"}
                 </p>
               </div>
             )}
@@ -227,7 +237,7 @@ export default function WalletAuthPanel() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 hover:text-foreground transition-colors"
               >
-                在 Etherscan 查看 <ExternalLink className="w-3 h-3" />
+                {lang === "zh" ? "在 Etherscan 查看" : "View on Etherscan"} <ExternalLink className="w-3 h-3" />
               </a>
             </div>
 
@@ -238,7 +248,7 @@ export default function WalletAuthPanel() {
               className="w-full border-[oklch(0.65_0.22_25/0.3)] text-[oklch(0.65_0.22_25)] hover:bg-[oklch(0.65_0.22_25/0.1)]"
             >
               <LogOut className="w-3.5 h-3.5 mr-2" />
-              中斷連接
+              {t("disconnect")}
             </Button>
           </motion.div>
         )}

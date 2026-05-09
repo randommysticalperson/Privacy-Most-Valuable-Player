@@ -1,13 +1,15 @@
 /**
  * ThreadList — Forum thread listing with privacy badges
+ * i18n: all labels via useI18n()
  */
 
 import { useState } from "react";
-import { Pin, MessageSquare, Zap, Lock, Eye, Database, BarChart2, Cpu, Shield, TrendingUp } from "lucide-react";
+import { Pin, MessageSquare, Zap, Lock, Eye, Database, BarChart2, Cpu, Shield } from "lucide-react";
 import {
-  SEED_THREADS, CATEGORY_LABELS, CATEGORY_COLORS, formatRelativeTime,
+  SEED_THREADS, CATEGORY_COLORS, formatRelativeTime,
   type ForumThread, type ThreadCategory, type PrivacyBadge,
 } from "@/lib/forumStore";
+import { useI18n } from "@/contexts/I18nContext";
 
 const BADGE_CONFIG: Record<PrivacyBadge, { icon: React.ElementType; color: string; label: string }> = {
   "zkp-verified": { icon: Zap,      color: "oklch(0.75 0.18 75)",  label: "ZKP" },
@@ -24,10 +26,20 @@ interface ThreadListProps {
 }
 
 export default function ThreadList({ activeCategory, onThreadSelect, extraThreads }: ThreadListProps) {
+  const { t } = useI18n();
   const [sortBy, setSortBy] = useState<"recent" | "popular">("recent");
 
+  const CATEGORY_LABELS_I18N: Record<ThreadCategory, string> = {
+    "zero-knowledge": t("catZkp"),
+    "cryptography":   t("catCrypto"),
+    "identity":       t("catIdentity"),
+    "privacy-tech":   t("catPrivacy"),
+    "decentralized":  t("catDecentralized"),
+    "general":        t("catGeneral"),
+  };
+
   const allThreads = [...extraThreads, ...SEED_THREADS];
-  const filtered = activeCategory ? allThreads.filter(t => t.category === activeCategory) : allThreads;
+  const filtered = activeCategory ? allThreads.filter(th => th.category === activeCategory) : allThreads;
   const sorted = [...filtered].sort((a, b) =>
     sortBy === "recent" ? b.lastActivity - a.lastActivity : b.postCount - a.postCount
   );
@@ -41,14 +53,11 @@ export default function ThreadList({ activeCategory, onThreadSelect, extraThread
               <Shield className="w-4 h-4 text-[oklch(0.51_0.24_264)]" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>歡迎來到 ZeroForum</h2>
+              <h2 className="text-sm font-semibold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                {t("welcomeTitle")}
+              </h2>
               <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                以匿名與隱私為核心的論壇，由{" "}
-                <span className="text-[oklch(0.75_0.18_75)] font-mono text-[10px]">MetaMask</span>,{" "}
-                <span className="text-[oklch(0.51_0.24_264)] font-mono text-[10px]">Semaphore ZKP</span>,{" "}
-                <span className="text-[oklch(0.7_0.17_162)] font-mono text-[10px]">WebCrypto E2E</span>, and{" "}
-                <span className="text-[oklch(0.51_0.24_264)] font-mono text-[10px]">IPFS</span>.
-                連接錢包即可發文——你的身份是 ZKP 無效化符，而非使用者名稱。
+                {t("welcomeDesc")}
               </p>
             </div>
           </div>
@@ -58,9 +67,11 @@ export default function ThreadList({ activeCategory, onThreadSelect, extraThread
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-sm font-semibold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            {activeCategory ? CATEGORY_LABELS[activeCategory] : "全部討論串"}
+            {activeCategory ? CATEGORY_LABELS_I18N[activeCategory] : t("allThreads")}
           </h2>
-          <p className="text-[10px] text-muted-foreground">{sorted.length} 個討論串</p>
+          <p className="text-[10px] text-muted-foreground">
+            {sorted.length} {t("threads")}
+          </p>
         </div>
         <div className="flex items-center gap-1">
           {(["recent", "popular"] as const).map(s => (
@@ -73,14 +84,16 @@ export default function ThreadList({ activeCategory, onThreadSelect, extraThread
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {s === "recent" ? "最新" : "熱門"}
+              {s === "recent" ? t("newest") : t("hot")}
             </button>
           ))}
         </div>
       </div>
 
       {sorted.length === 0 ? (
-        <div className="py-12 text-center text-muted-foreground text-sm">此分類尚無討論串。</div>
+        <div className="py-12 text-center text-muted-foreground text-sm">
+          {t("noThreadsTitle")}
+        </div>
       ) : (
         <div className="space-y-2">
           {sorted.map(thread => (
@@ -109,7 +122,7 @@ export default function ThreadList({ activeCategory, onThreadSelect, extraThread
                       className="text-[10px] px-1.5 py-0.5 rounded border"
                       style={{ color: CATEGORY_COLORS[thread.category], borderColor: `${CATEGORY_COLORS[thread.category]}40` }}
                     >
-                      {CATEGORY_LABELS[thread.category]}
+                      {CATEGORY_LABELS_I18N[thread.category]}
                     </span>
                     {thread.badges.map(badge => {
                       const cfg = BADGE_CONFIG[badge];
