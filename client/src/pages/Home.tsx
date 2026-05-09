@@ -1,318 +1,237 @@
 /**
- * Home.tsx — Main Application Page
+ * Home.tsx — ZeroForum Main Page
  * Design: Zero-Knowledge Glass — Dark Space Glassmorphism
  *
- * Layout:
- * - Full-width hero section with background image
- * - 2-column dashboard: left (wallet + ZKP), right (E2E + IPFS + DP)
- * - Architecture overview section
- * - Footer with tech stack
+ * Layout: Left sidebar + main content area (forum or tools panel)
+ * Auth: MetaMask Embedded Wallets SDK (@web3auth/modal/react)
  */
 
-import WalletAuthPanel from "@/components/WalletAuthPanel";
-import ZKPProofPanel from "@/components/ZKPProofPanel";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import ForumSidebar from "@/components/forum/ForumSidebar";
+import ForumHeader from "@/components/forum/ForumHeader";
+import ThreadList from "@/components/forum/ThreadList";
+import ThreadView from "@/components/forum/ThreadView";
+import NewThreadModal from "@/components/forum/NewThreadModal";
 import E2EEncryptPanel from "@/components/E2EEncryptPanel";
 import IPFSStoragePanel from "@/components/IPFSStoragePanel";
 import DPAnalyticsPanel from "@/components/DPAnalyticsPanel";
 import SteganographyPanel from "@/components/SteganographyPanel";
 import HomomorphicPanel from "@/components/HomomorphicPanel";
-import { motion } from "framer-motion";
-import { Shield, Lock, Database, BarChart2, Zap, ExternalLink, EyeOff, Cpu } from "lucide-react";
+import ZKPProofPanel from "@/components/ZKPProofPanel";
+import { type ForumThread, type ForumPost, type ThreadCategory } from "@/lib/forumStore";
 
-const HERO_BG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663332318761/Lc9psW6cNr5xUfrXrGkTUX/hero-bg-ZJayaXRxyCQiW3V7DUYdu6.webp";
-const ZKP_IMG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663332318761/Lc9psW6cNr5xUfrXrGkTUX/zkp-visual-hhZ9oGLX3SWffqvs9kfjBA.webp";
-const ENC_IMG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663332318761/Lc9psW6cNr5xUfrXrGkTUX/encryption-visual-ZudeejdonVfSu465YRBgmb.webp";
-
-const techStack = [
-  { name: 'Semaphore V4', desc: 'ZKP group membership', href: 'https://semaphore.pse.dev', color: 'oklch(0.51 0.24 264)' },
-  { name: 'SIWE', desc: 'Sign-In with Ethereum', href: 'https://login.xyz', color: 'oklch(0.7 0.17 162)' },
-  { name: 'WebCrypto API', desc: 'AES-GCM-256 E2E', href: 'https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API', color: 'oklch(0.75 0.18 75)' },
-  { name: 'IPFS / Pinata', desc: 'Decentralized storage', href: 'https://pinata.cloud', color: 'oklch(0.51 0.24 264)' },
-  { name: 'DID:PKH', desc: 'W3C Decentralized ID', href: 'https://www.w3.org/TR/did-core/', color: 'oklch(0.7 0.17 162)' },
-  { name: 'Laplace DP', desc: 'Differential privacy', href: 'https://opendp.org', color: 'oklch(0.75 0.18 75)' },
-  { name: 'LSB Stego', desc: 'Image steganography', href: 'https://en.wikipedia.org/wiki/Steganography', color: 'oklch(0.51 0.24 264)' },
-  { name: 'BFV / SEAL', desc: 'Homomorphic encryption', href: 'https://github.com/s0l0ist/node-seal', color: 'oklch(0.75 0.18 75)' },
-];
-
-const architectureItems = [
-  {
-    icon: Shield,
-    title: 'No Username / Password',
-    desc: 'Authentication via cryptographic wallet signature (SIWE). Identity = key pair. DID:PKH derives a W3C-standard identifier from your Ethereum address.',
-    color: 'oklch(0.51 0.24 264)',
-  },
-  {
-    icon: Zap,
-    title: 'Zero-Knowledge Proof',
-    desc: 'Semaphore V4 proves group membership without revealing which member you are. The nullifier prevents double-signaling without linking to identity.',
-    color: 'oklch(0.75 0.18 75)',
-  },
-  {
-    icon: Lock,
-    title: 'End-to-End Encryption',
-    desc: 'All data is encrypted in the browser using AES-GCM-256 before leaving the client. The server stores only ciphertext — it cannot read your data.',
-    color: 'oklch(0.7 0.17 162)',
-  },
-  {
-    icon: Database,
-    title: 'Decentralized Storage',
-    desc: 'Encrypted ciphertext is pinned to IPFS. The CID (content hash) is stored server-side. Personal data never goes on-chain — blockchain data is immutable.',
-    color: 'oklch(0.51 0.24 264)',
-  },
-  {
-    icon: EyeOff,
-    title: 'Steganography',
-    desc: 'Secret messages are hidden inside image pixels using LSB substitution. The image looks identical to the human eye (PSNR >50 dB). Combine with AES encryption for double protection.',
-    color: 'oklch(0.51 0.24 264)',
-  },
-  {
-    icon: Cpu,
-    title: 'Homomorphic Encryption',
-    desc: 'BFV scheme allows the server to perform arithmetic (addition, multiplication) on encrypted data without ever decrypting it. Enables private voting, private ML inference, and encrypted databases.',
-    color: 'oklch(0.75 0.18 75)',
-  },
-  {
-    icon: BarChart2,
-    title: 'Differential Privacy',
-    desc: 'Analytics use the Laplace mechanism to add calibrated noise. Individual users cannot be identified from aggregate statistics even with auxiliary data.',
-    color: 'oklch(0.75 0.18 75)',
-  },
-];
+type ToolView = '/tools/encrypt' | '/tools/stego' | '/tools/he' | '/tools/ipfs' | '/tools/dp' | '/tools/zkp';
 
 export default function Home() {
+  const [activeView, setActiveView] = useState<'forum' | 'tools'>('forum');
+  const [activeCategory, setActiveCategory] = useState<ThreadCategory | null>(null);
+  const [selectedThread, setSelectedThread] = useState<ForumThread | null>(null);
+  const [activeTool, setActiveTool] = useState<ToolView>('/tools/encrypt');
+  const [showNewThread, setShowNewThread] = useState(false);
+  const [extraThreads, setExtraThreads] = useState<ForumThread[]>([]);
+  const [extraPosts, setExtraPosts] = useState<ForumPost[]>([]);
+
+  const handleToolSelect = (tool: string) => {
+    setActiveTool(tool as ToolView);
+    setActiveView('tools');
+  };
+
+  const handleThreadCreated = (thread: ForumThread) => {
+    setExtraThreads(prev => [thread, ...prev]);
+    setSelectedThread(thread);
+    setActiveView('forum');
+  };
+
+  const handlePostAdded = (post: ForumPost) => {
+    setExtraPosts(prev => [...prev, post]);
+  };
+
   return (
-    <div className="min-h-screen hex-bg">
-      {/* Hero Section */}
-      <section
-        className="relative min-h-[60vh] flex flex-col items-start justify-end pb-16 px-6 md:px-12 lg:px-20 overflow-hidden"
-        style={{
-          backgroundImage: `url(${HERO_BG})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      >
-        {/* Overlay gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[oklch(0.09_0.02_265)] via-[oklch(0.09_0.02_265/0.7)] to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[oklch(0.09_0.02_265/0.6)] to-transparent" />
+    <div className="min-h-screen bg-[oklch(0.08_0.01_265)] text-foreground flex flex-col">
+      {/* Top header */}
+      <ForumHeader onNewThread={() => setShowNewThread(true)} />
 
-        {/* Content */}
-        <div className="relative z-10 max-w-3xl">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-          >
-            <div className="flex items-center gap-2 mb-4">
-              <div className="px-3 py-1 rounded-full border border-[oklch(0.51_0.24_264/0.4)] bg-[oklch(0.51_0.24_264/0.1)] text-[oklch(0.51_0.24_264)] text-xs font-medium"
-                   style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                Privacy-First Architecture MVP
-              </div>
-            </div>
-            <h1
-              className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-4"
-              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-            >
-              Identity Without
-              <br />
-              <span className="text-transparent bg-clip-text"
-                    style={{ backgroundImage: 'linear-gradient(90deg, oklch(0.51 0.24 264), oklch(0.7 0.17 162))' }}>
-                Passwords
-              </span>
-            </h1>
-            <p className="text-base md:text-lg text-[oklch(0.8_0.005_265)] max-w-xl leading-relaxed">
-              Wallet authentication · Zero-knowledge proofs · End-to-end encryption · Decentralized storage · Differential privacy analytics
-            </p>
-          </motion.div>
-
-          {/* Tech badges */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.2 }}
-            className="flex flex-wrap gap-2 mt-6"
-          >
-            {['DID:PKH', 'Semaphore ZKP', 'AES-GCM', 'IPFS', 'Laplace DP'].map(tag => (
-              <span
-                key={tag}
-                className="px-2.5 py-1 rounded-md text-xs font-mono bg-[oklch(0.14_0.015_265/0.7)] border border-[oklch(1_0_0/0.1)] text-[oklch(0.8_0.005_265)]"
-              >
-                {tag}
-              </span>
-            ))}
-          </motion.div>
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left sidebar — hidden on mobile */}
+        <div className="hidden lg:block border-r border-border bg-[oklch(0.09_0.01_265/0.8)]">
+          <ForumSidebar
+            activeCategory={activeCategory}
+            onCategorySelect={cat => {
+              setActiveCategory(cat);
+              setSelectedThread(null);
+            }}
+            onToolSelect={handleToolSelect}
+            activeView={activeView}
+            onViewChange={setActiveView}
+          />
         </div>
-      </section>
 
-      {/* Main Dashboard */}
-      <section className="container py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left column */}
-          <div className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            >
-              <WalletAuthPanel />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <ZKPProofPanel />
-            </motion.div>
-          </div>
-
-          {/* Right column */}
-          <div className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.15 }}
-            >
-              <E2EEncryptPanel />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.25 }}
-            >
-              <IPFSStoragePanel />
-            </motion.div>
-            <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.35 }}
-          >
-            <DPAnalyticsPanel />
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.45 }}
-          >
-            <SteganographyPanel />
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.55 }}
-          >
-            <HomomorphicPanel />
-          </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Architecture Overview */}
-      <section className="container py-12 border-t border-border">
-        <div className="flex items-start gap-12">
-          {/* Left: text */}
-          <div className="flex-1 space-y-8">
-            <div>
-              <h2
-                className="text-2xl md:text-3xl font-bold mb-3"
-                style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-              >
-                Privacy Architecture
-              </h2>
-              <p className="text-muted-foreground text-sm leading-relaxed max-w-lg">
-                Each layer of this system is designed to minimize trust in any central party. The server never sees plaintext data, never stores passwords, and cannot link actions to real identities.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              {architectureItems.map((item, i) => (
+        {/* Main content */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-3xl mx-auto px-4 py-6">
+            <AnimatePresence mode="wait">
+              {activeView === 'forum' ? (
                 <motion.div
-                  key={item.title}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="flex gap-4 p-4 glass-panel glass-panel-hover"
+                  key="forum"
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 8 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border"
-                    style={{
-                      borderColor: item.color,
-                      background: `color-mix(in oklch, ${item.color} 15%, transparent)`,
-                      color: item.color,
-                    }}
-                  >
-                    <item.icon className="w-4.5 h-4.5" style={{ color: item.color }} />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold mb-0.5" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                      {item.title}
-                    </h4>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
-                  </div>
+                  {selectedThread ? (
+                    <ThreadView
+                      thread={selectedThread}
+                      onBack={() => setSelectedThread(null)}
+                      extraPosts={extraPosts}
+                      onPostAdded={handlePostAdded}
+                    />
+                  ) : (
+                    <ThreadList
+                      activeCategory={activeCategory}
+                      onThreadSelect={setSelectedThread}
+                      extraThreads={extraThreads}
+                    />
+                  )}
                 </motion.div>
-              ))}
-            </div>
+              ) : (
+                <motion.div
+                  key="tools"
+                  initial={{ opacity: 0, x: 8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -8 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ToolsView activeTool={activeTool} onToolChange={t => setActiveTool(t as ToolView)} />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
+        </main>
 
-          {/* Right: images */}
-          <div className="hidden lg:flex flex-col gap-4 w-72 shrink-0">
-            <div className="rounded-xl overflow-hidden border border-border animate-float">
-              <img src={ZKP_IMG} alt="ZKP Visualization" className="w-full object-cover" />
-              <div className="p-2 bg-[oklch(0.14_0.015_265/0.8)] text-center">
-                <p className="text-[10px] text-muted-foreground">Semaphore ZKP Circuit</p>
-              </div>
-            </div>
-            <div className="rounded-xl overflow-hidden border border-border" style={{ animationDelay: '2s' }}>
-              <img src={ENC_IMG} alt="E2E Encryption" className="w-full object-cover" />
-              <div className="p-2 bg-[oklch(0.14_0.015_265/0.8)] text-center">
-                <p className="text-[10px] text-muted-foreground">End-to-End Encryption Flow</p>
-              </div>
-            </div>
-          </div>
+        {/* Right panel — tech stack info */}
+        <div className="hidden xl:block w-56 border-l border-border bg-[oklch(0.09_0.01_265/0.8)] p-4 space-y-4 overflow-y-auto">
+          <RightPanel />
         </div>
-      </section>
+      </div>
 
-      {/* Tech Stack */}
-      <section className="container py-10 border-t border-border">
-        <h3
-          className="text-sm font-semibold text-muted-foreground mb-5 uppercase tracking-wider"
-          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+      {/* New thread modal */}
+      <NewThreadModal
+        open={showNewThread}
+        onClose={() => setShowNewThread(false)}
+        onCreated={handleThreadCreated}
+      />
+    </div>
+  );
+}
+
+// Tools panel switcher
+const TOOL_TABS: { path: ToolView; label: string }[] = [
+  { path: '/tools/encrypt', label: 'E2E Encrypt' },
+  { path: '/tools/stego', label: 'Steganography' },
+  { path: '/tools/he', label: 'Homomorphic' },
+  { path: '/tools/ipfs', label: 'IPFS Storage' },
+  { path: '/tools/dp', label: 'Diff. Privacy' },
+  { path: '/tools/zkp', label: 'ZKP Proof' },
+];
+
+function ToolsView({ activeTool, onToolChange }: { activeTool: ToolView; onToolChange: (t: string) => void }) {
+  return (
+    <div className="space-y-4">
+      {/* Tool tabs */}
+      <div className="flex items-center gap-1 flex-wrap">
+        {TOOL_TABS.map(tab => (
+          <button
+            key={tab.path}
+            onClick={() => onToolChange(tab.path)}
+            className={`px-3 py-1.5 rounded-lg text-xs transition-all duration-150 ${
+              activeTool === tab.path
+                ? 'bg-[oklch(0.51_0.24_264/0.15)] text-[oklch(0.51_0.24_264)] border border-[oklch(0.51_0.24_264/0.3)]'
+                : 'text-muted-foreground hover:text-foreground hover:bg-[oklch(1_0_0/0.05)]'
+            }`}
+            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tool content */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTool}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.18 }}
         >
-          Technology Stack
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          {techStack.map(tech => (
-            <a
-              key={tech.name}
-              href={tech.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="glass-panel glass-panel-hover p-3 text-center group"
-            >
-              <p
-                className="text-sm font-semibold mb-0.5 group-hover:underline"
-                style={{ fontFamily: "'Space Grotesk', sans-serif", color: tech.color }}
-              >
-                {tech.name}
-              </p>
-              <p className="text-[10px] text-muted-foreground">{tech.desc}</p>
-              <ExternalLink className="w-2.5 h-2.5 text-muted-foreground mx-auto mt-1 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </a>
+          {activeTool === '/tools/encrypt' && <E2EEncryptPanel />}
+          {activeTool === '/tools/stego' && <SteganographyPanel />}
+          {activeTool === '/tools/he' && <HomomorphicPanel />}
+          {activeTool === '/tools/ipfs' && <IPFSStoragePanel />}
+          {activeTool === '/tools/dp' && <DPAnalyticsPanel />}
+          {activeTool === '/tools/zkp' && <ZKPProofPanel />}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// Right sidebar panel — tech stack + live stats
+function RightPanel() {
+  const techStack = [
+    { name: '@web3auth/modal', desc: 'MetaMask Embedded SDK', color: 'oklch(0.75 0.18 75)' },
+    { name: 'Semaphore V4', desc: 'ZKP group proof', color: 'oklch(0.51 0.24 264)' },
+    { name: 'WebCrypto API', desc: 'AES-GCM-256 E2E', color: 'oklch(0.7 0.17 162)' },
+    { name: 'IPFS / Pinata', desc: 'Decentralized storage', color: 'oklch(0.51 0.24 264)' },
+    { name: 'DID:PKH', desc: 'W3C Decentralized ID', color: 'oklch(0.7 0.17 162)' },
+    { name: 'Laplace DP', desc: 'Differential privacy', color: 'oklch(0.75 0.18 75)' },
+    { name: 'LSB Stego', desc: 'Image steganography', color: 'oklch(0.51 0.24 264)' },
+    { name: 'BFV Scheme', desc: 'Homomorphic encryption', color: 'oklch(0.75 0.18 75)' },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Tech Stack</p>
+        <div className="space-y-2">
+          {techStack.map(t => (
+            <div key={t.name} className="space-y-0.5">
+              <p className="text-[11px] font-mono" style={{ color: t.color }}>{t.name}</p>
+              <p className="text-[10px] text-muted-foreground">{t.desc}</p>
+            </div>
           ))}
         </div>
-      </section>
+      </div>
 
-      {/* Footer */}
-      <footer className="container py-6 border-t border-border">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-md bg-[oklch(0.51_0.24_264/0.2)] border border-[oklch(0.51_0.24_264/0.3)] flex items-center justify-center">
-              <Shield className="w-3 h-3 text-[oklch(0.51_0.24_264)]" />
+      <div className="h-px bg-border" />
+
+      <div>
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Privacy Guarantees</p>
+        <div className="space-y-1.5">
+          {[
+            'No passwords stored',
+            'Server sees only ciphertext',
+            'Identity = ZKP nullifier',
+            'Metadata minimized',
+            'IPFS content-addressed',
+            'Analytics noise-injected',
+          ].map(g => (
+            <div key={g} className="flex items-start gap-1.5">
+              <span className="w-1 h-1 rounded-full bg-[oklch(0.7_0.17_162)] mt-1.5 shrink-0" />
+              <p className="text-[10px] text-muted-foreground">{g}</p>
             </div>
-            <span style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Privacy-First Identity MVP</span>
-          </div>
-          <p>No passwords · No tracking · No central authority</p>
-          <p className="font-mono text-[10px]">Built with React + WebCrypto + Semaphore V4</p>
+          ))}
         </div>
-      </footer>
+      </div>
+
+      <div className="h-px bg-border" />
+
+      <div className="p-2.5 rounded-lg bg-[oklch(0.51_0.24_264/0.08)] border border-[oklch(0.51_0.24_264/0.2)]">
+        <p className="text-[9px] text-[oklch(0.51_0.24_264)] leading-relaxed">
+          This is a privacy MVP demo. All cryptographic operations run in your browser. No data is sent to any server.
+        </p>
+      </div>
     </div>
   );
 }
