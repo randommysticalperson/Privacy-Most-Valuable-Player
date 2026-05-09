@@ -20,14 +20,15 @@ import {
 
 interface ForumHeaderProps {
   onNewThread: () => void;
+  searchQuery: string;
+  onSearchChange: (q: string) => void;
 }
 
-export default function ForumHeader({ onNewThread }: ForumHeaderProps) {
+export default function ForumHeader({ onNewThread, searchQuery, onSearchChange }: ForumHeaderProps) {
   const { connect, isConnecting } = useWeb3AuthConnect();
   const { disconnect } = useWeb3AuthDisconnect();
   const { userInfo, isConnected } = useWeb3AuthUser();
   const { lang, t, toggleLang } = useI18n();
-  const [searchQuery, setSearchQuery] = useState("");
 
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -43,7 +44,7 @@ export default function ForumHeader({ onNewThread }: ForumHeaderProps) {
           <input
             type="text"
             value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
+            onChange={e => onSearchChange(e.target.value)}
             placeholder={t("searchPlaceholder")}
             className="w-full h-8 pl-8 pr-3 rounded-lg bg-[oklch(1_0_0/0.05)] border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           />

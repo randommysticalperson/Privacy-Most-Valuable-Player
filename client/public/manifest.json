@@ -1,0 +1,27 @@
+{
+  "name": "ZeroForum — 匿名・加密・去中心化",
+  "short_name": "ZeroForum",
+  "description": "Privacy-first anonymous forum powered by MetaMask, Semaphore ZKP, WebCrypto E2E, and IPFS.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080C14",
+  "theme_color": "#080C14",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["privacy", "social", "utilities"],
+  "lang": "zh-TW",
+  "dir": "ltr"
+}

@@ -45,6 +45,7 @@ function ForumApp() {
   const [activeTool, setActiveTool] = useState<ActiveTool>("wallet");
   const [extraThreads, setExtraThreads] = useState<ForumThread[]>([]);
   const [extraPosts, setExtraPosts] = useState<ForumPost[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleToolSelect = (path: string) => {
     const toolMap: Record<string, ActiveTool> = {
@@ -93,7 +94,11 @@ function ForumApp() {
   return (
     <div className="min-h-screen bg-background flex flex-col pb-16 md:pb-0" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       {/* Top header bar */}
-      <ForumHeader onNewThread={() => setShowNewThread(true)} />
+      <ForumHeader
+        onNewThread={() => setShowNewThread(true)}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left sidebar — desktop only */}
@@ -131,6 +136,7 @@ function ForumApp() {
                   activeCategory={activeCategory}
                   onThreadSelect={t => setSelectedThread(t)}
                   extraThreads={extraThreads}
+                  searchQuery={searchQuery}
                 />
               )}
             </div>

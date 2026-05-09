@@ -4,6 +4,7 @@
  * Demonstrates: Encrypt-then-upload to IPFS (demo mode with mock CIDs)
  */
 
+import { useI18n } from "@/contexts/I18nContext";
 import { useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ import { DemoIPFSStore, formatCID, type IPFSStoredItem } from "@/lib/ipfsStorage
 const demoStore = new DemoIPFSStore();
 
 export default function IPFSStoragePanel() {
+  const { t, lang } = useI18n();
   const [name, setName] = useState("my-private-note");
   const [content, setContent] = useState("This is my private data. It will be encrypted before upload.");
   const [isUploading, setIsUploading] = useState(false);

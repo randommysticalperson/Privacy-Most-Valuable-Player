@@ -23,9 +23,10 @@ interface ThreadListProps {
   activeCategory: ThreadCategory | null;
   onThreadSelect: (t: ForumThread) => void;
   extraThreads: ForumThread[];
+  searchQuery?: string;
 }
 
-export default function ThreadList({ activeCategory, onThreadSelect, extraThreads }: ThreadListProps) {
+export default function ThreadList({ activeCategory, onThreadSelect, extraThreads, searchQuery = "" }: ThreadListProps) {
   const { t } = useI18n();
   const [sortBy, setSortBy] = useState<"recent" | "popular">("recent");
 
@@ -39,7 +40,16 @@ export default function ThreadList({ activeCategory, onThreadSelect, extraThread
   };
 
   const allThreads = [...extraThreads, ...SEED_THREADS];
-  const filtered = activeCategory ? allThreads.filter(th => th.category === activeCategory) : allThreads;
+  const q = searchQuery.trim().toLowerCase();
+  const filtered = allThreads.filter(th => {
+    const matchCat = activeCategory ? th.category === activeCategory : true;
+    const matchSearch = q
+      ? th.title.toLowerCase().includes(q) ||
+        th.tags.some(tag => tag.toLowerCase().includes(q)) ||
+        th.authorAlias.toLowerCase().includes(q)
+      : true;
+    return matchCat && matchSearch;
+  });
   const sorted = [...filtered].sort((a, b) =>
     sortBy === "recent" ? b.lastActivity - a.lastActivity : b.postCount - a.postCount
   );

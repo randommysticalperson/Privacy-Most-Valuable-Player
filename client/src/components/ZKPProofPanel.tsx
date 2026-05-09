@@ -1,12 +1,13 @@
 /**
  * ZKPProofPanel — Semaphore Zero-Knowledge Proof UI
  * Design: Zero-Knowledge Glass — Dark Space Glassmorphism
- * Shows: group membership proof generation and verification
+ * i18n: all labels via useI18n()
  */
 
 import { useState } from "react";
 import { useSemaphore } from "@/contexts/SemaphoreContext";
 import { useWallet } from "@/contexts/WalletContext";
+import { useI18n } from "@/contexts/I18nContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -26,25 +27,26 @@ export default function ZKPProofPanel() {
     generateGroupProof,
     resetProof,
   } = useSemaphore();
+  const { t, lang } = useI18n();
 
-  const [message, setMessage] = useState("I am a verified member");
+  const [message, setMessage] = useState(lang === "zh" ? "我是已驗證的成員" : "I am a verified member");
   const [showProofDetails, setShowProofDetails] = useState(false);
 
   const isGenerating = ['building-group', 'generating-proof', 'verifying'].includes(status);
 
   const statusLabel = {
-    idle: identityInfo ? '準備生成證明' : '等待身份',
-    'creating-identity': '建立身份中...',
-    'building-group': 'Building Merkle Tree...',
-    'generating-proof': '生成 ZKP 證明中...',
-    verifying: '驗證證明中...',
-    verified: '證明已驗證',
-    failed: '證明失敗',
+    idle: identityInfo ? (lang === "zh" ? '準備生成證明' : 'Ready to prove') : (lang === "zh" ? '等待身份' : 'Awaiting identity'),
+    'creating-identity': lang === "zh" ? '建立身份中...' : 'Creating identity...',
+    'building-group': lang === "zh" ? '構建 Merkle 樹...' : 'Building Merkle Tree...',
+    'generating-proof': lang === "zh" ? '生成 ZKP 證明中...' : 'Generating ZKP proof...',
+    verifying: lang === "zh" ? '驗證證明中...' : 'Verifying proof...',
+    verified: lang === "zh" ? '證明已驗證' : 'Proof verified',
+    failed: lang === "zh" ? '證明失敗' : 'Proof failed',
   }[status];
 
   const handleGenerate = async () => {
     if (!message.trim()) {
-      toast.error('Please enter a message to prove');
+      toast.error(lang === "zh" ? '請輸入訊息' : 'Please enter a message');
       return;
     }
     await generateGroupProof(message);
@@ -86,9 +88,11 @@ export default function ZKPProofPanel() {
         })}
         <p className="text-[10px] text-muted-foreground mt-1">
           {proofResult ? (
-            <span className="text-[oklch(0.7_0.17_162)]">Your node is hidden in the tree</span>
+            <span className="text-[oklch(0.7_0.17_162)]">
+              {lang === "zh" ? "你的節點隱藏在樹中" : "Your node is hidden in the tree"}
+            </span>
           ) : (
-            `${groupSize} members in group`
+            `${groupSize} ${lang === "zh" ? "位成員在群組中" : "members in group"}`
           )}
         </p>
       </div>
@@ -109,9 +113,9 @@ export default function ZKPProofPanel() {
           </div>
           <div>
             <h3 className="font-semibold text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              Semaphore ZKP
+              {t("zkpTitle")}
             </h3>
-            <p className="text-xs text-muted-foreground">匿名群組成員身份證明</p>
+            <p className="text-xs text-muted-foreground">{t("zkpSubtitle")}</p>
           </div>
         </div>
         <Badge
@@ -130,7 +134,9 @@ export default function ZKPProofPanel() {
       <div className="p-3 rounded-lg bg-[oklch(0.14_0.015_265/0.5)] border border-border">
         <div className="flex items-center gap-2 mb-2">
           <Users className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">群組 Merkle 樹（{groupSize} 位成員）</span>
+          <span className="text-xs text-muted-foreground">
+            {lang === "zh" ? `群組 Merkle 樹（${groupSize} 位成員）` : `Group Merkle Tree (${groupSize} members)`}
+          </span>
         </div>
         {renderMerkleTree()}
       </div>
@@ -138,7 +144,7 @@ export default function ZKPProofPanel() {
       {/* Not connected */}
       {!isConnected && (
         <p className="text-xs text-muted-foreground text-center py-2">
-          請先連接錢包以建立 Semaphore 身份
+          {lang === "zh" ? "請先連接錢包以建立 Semaphore 身份" : "Connect wallet to create a Semaphore identity"}
         </p>
       )}
 
@@ -146,16 +152,20 @@ export default function ZKPProofPanel() {
       {isConnected && identityInfo && status !== 'verified' && !isGenerating && (
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-muted-foreground mb-1.5 block">匿名訊息</label>
+            <label className="text-xs text-muted-foreground mb-1.5 block">
+              {lang === "zh" ? "匿名訊息" : "Anonymous Message"}
+            </label>
             <Input
               value={message}
               onChange={e => setMessage(e.target.value)}
-              placeholder="輸入您的匿名訊息..."
+              placeholder={lang === "zh" ? "輸入您的匿名訊息..." : "Enter your anonymous message..."}
               className="bg-[oklch(0.14_0.015_265/0.5)] border-border text-sm font-mono"
               maxLength={64}
             />
             <p className="text-[10px] text-muted-foreground mt-1">
-              此訊息包含在證明中，但無法追溯到您的身份
+              {lang === "zh"
+                ? "此訊息包含在證明中，但無法追溯到您的身份"
+                : "This message is included in the proof but cannot be traced back to your identity"}
             </p>
           </div>
           <Button
@@ -165,7 +175,7 @@ export default function ZKPProofPanel() {
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
             <Zap className="w-4 h-4 mr-2" />
-            生成 ZKP 證明
+            {t("zkpGenProof")}
           </Button>
         </div>
       )}
@@ -182,9 +192,9 @@ export default function ZKPProofPanel() {
           <div className="text-center">
             <p className="text-sm text-[oklch(0.75_0.18_75)]">{statusLabel}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              {status === 'building-group' && '正從群組成員構建 Merkle 樹...'}
-              {status === 'generating-proof' && '執行 Groth16 電路中，請稍候...'}
-              {status === 'verifying' && '在本地驗證證明有效性...'}
+              {status === 'building-group' && (lang === "zh" ? '正從群組成員構建 Merkle 樹...' : 'Building Merkle tree from group members...')}
+              {status === 'generating-proof' && (lang === "zh" ? '執行 Groth16 電路中，請稍候...' : 'Running Groth16 circuit, please wait...')}
+              {status === 'verifying' && (lang === "zh" ? '在本地驗證證明有效性...' : 'Verifying proof locally...')}
             </p>
           </div>
         </div>
@@ -231,10 +241,10 @@ export default function ZKPProofPanel() {
               <div>
                 <p className={`text-sm font-semibold ${proofResult.isValid ? 'text-[oklch(0.7_0.17_162)]' : 'text-[oklch(0.65_0.22_25)]'}`}
                    style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                  {proofResult.isValid ? '證明有效 ✓' : '證明無效 ✗'}
+                  {proofResult.isValid ? t("zkpVerifiedOk") : t("zkpVerifiedFail")}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  已證明成員身份，未暴露真實身份
+                  {lang === "zh" ? "已證明成員身份，未暴露真實身份" : "Membership proved without revealing identity"}
                 </p>
               </div>
             </div>
@@ -242,7 +252,9 @@ export default function ZKPProofPanel() {
             {/* Key proof fields */}
             <div className="space-y-2">
               <div className="p-2.5 rounded-lg bg-[oklch(0.14_0.015_265/0.5)] border border-border">
-                <p className="text-[10px] text-muted-foreground mb-0.5 uppercase tracking-wider">無效化符（防重復信號）</p>
+                <p className="text-[10px] text-muted-foreground mb-0.5 uppercase tracking-wider">
+                  {t("zkpNullifierLabel")}
+                </p>
                 <code className="crypto-addr text-[oklch(0.85_0.005_265)] text-[10px] break-all">
                   {proofResult.nullifier.slice(0, 30)}...
                 </code>
@@ -267,7 +279,10 @@ export default function ZKPProofPanel() {
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               {showProofDetails ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-              {showProofDetails ? '隱藏' : '顯示'} Groth16 證明點
+              {showProofDetails
+                ? (lang === "zh" ? "隱藏" : "Hide")
+                : (lang === "zh" ? "顯示" : "Show")
+              } Groth16 {lang === "zh" ? "證明點" : "proof points"}
             </button>
 
             <AnimatePresence>
@@ -292,7 +307,7 @@ export default function ZKPProofPanel() {
               className="w-full border-border text-muted-foreground hover:text-foreground"
             >
               <RefreshCw className="w-3.5 h-3.5 mr-2" />
-              重新生成證明
+              {lang === "zh" ? "重新生成證明" : "Regenerate Proof"}
             </Button>
           </motion.div>
         )}

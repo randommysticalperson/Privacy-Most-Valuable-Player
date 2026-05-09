@@ -10,6 +10,7 @@
  * - Private voting demo: sum encrypted votes without seeing individual votes
  */
 
+import { useI18n } from "@/contexts/I18nContext";
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +43,7 @@ interface ComputeResult {
 }
 
 export default function HomomorphicPanel() {
+  const { t, lang } = useI18n();
   const [keyPair, setKeyPair] = useState<HEKeyPair | null>(null);
   const [isGeneratingKeys, setIsGeneratingKeys] = useState(false);
   const [showKeyDetails, setShowKeyDetails] = useState(false);

@@ -5,6 +5,7 @@
  */
 
 import { useState, useCallback } from "react";
+import { useI18n } from "@/contexts/I18nContext";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +22,7 @@ import {
 } from "@/lib/e2eEncryption";
 
 export default function E2EEncryptPanel() {
+  const { t, lang } = useI18n();
   const [plaintext, setPlaintext] = useState("Hello, this is my private message. The server will never see this.");
   const [encryptedPayload, setEncryptedPayload] = useState<EncryptedPayload | null>(null);
   const [decryptedText, setDecryptedText] = useState<string | null>(null);
@@ -43,9 +45,9 @@ export default function E2EEncryptPanel() {
       // Encrypt in the browser — server never sees plaintext
       const payload = await encryptData(plaintext, key);
       setEncryptedPayload(payload);
-      toast.success('已在瀏覽器加密——伺服器僅能看到密文');
+      toast.success(lang === 'zh' ? '已在瀏覽器加密——伺服器僅能看到密文' : 'Encrypted in browser — server only sees ciphertext');
     } catch (err) {
-      toast.error('加密失敗：' + (err instanceof Error ? err.message : '未知錯誤'));
+      toast.error((lang === 'zh' ? '加密失敗：' : 'Encryption failed: ') + (err instanceof Error ? err.message : (lang === 'zh' ? '未知錯誤' : 'Unknown error')));
     } finally {
       setIsEncrypting(false);
     }
@@ -57,9 +59,9 @@ export default function E2EEncryptPanel() {
     try {
       const text = await decryptData(encryptedPayload, aesKey);
       setDecryptedText(text);
-      toast.success('已使用本地金鑰成功解密');
+      toast.success(lang === 'zh' ? '已使用本地金鑰成功解密' : 'Decrypted successfully with local key');
     } catch (err) {
-      toast.error('解密失敗：' + (err instanceof Error ? err.message : '未知錯誤'));
+      toast.error((lang === 'zh' ? '解密失敗：' : 'Decryption failed: ') + (err instanceof Error ? err.message : (lang === 'zh' ? '未知錯誤' : 'Unknown error')));
     } finally {
       setIsDecrypting(false);
     }
@@ -91,13 +93,13 @@ export default function E2EEncryptPanel() {
           </div>
           <div>
             <h3 className="font-semibold text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              端對端加密
+              {t("e2eTitle")}
             </h3>
-            <p className="text-xs text-muted-foreground">WebCrypto API · AES-GCM-256</p>
+            <p className="text-xs text-muted-foreground">{t("e2eSubtitle")}</p>
           </div>
         </div>
         <Badge variant="outline" className="text-xs text-muted-foreground border-border">
-          僅瀏覽器端
+          {lang === 'zh' ? '僅瀏覽器端' : 'Browser only'}
         </Badge>
       </div>
 
@@ -107,8 +109,8 @@ export default function E2EEncryptPanel() {
           <div className="w-8 h-8 rounded-lg bg-[oklch(0.75_0.18_75/0.2)] border border-[oklch(0.75_0.18_75/0.4)] flex items-center justify-center mb-1 mx-auto">
             <span className="text-[oklch(0.75_0.18_75)]">📝</span>
           </div>
-          <span className="text-[oklch(0.75_0.18_75)]">明文</span>
-          <br/><span className="text-muted-foreground">（瀏覽器）</span>
+          <span className="text-[oklch(0.75_0.18_75)]">{lang === 'zh' ? '明文' : 'Plaintext'}</span>
+          <br/><span className="text-muted-foreground">{lang === 'zh' ? '（瀏覽器）' : '(Browser)'}</span>
         </div>
         <div className="flex flex-col items-center gap-0.5">
           <ArrowRight className="w-4 h-4 text-[oklch(0.51_0.24_264)]" />
@@ -118,19 +120,19 @@ export default function E2EEncryptPanel() {
           <div className="w-8 h-8 rounded-lg bg-[oklch(0.51_0.24_264/0.2)] border border-[oklch(0.51_0.24_264/0.4)] flex items-center justify-center mb-1 mx-auto">
             <span>🔒</span>
           </div>
-          <span className="text-[oklch(0.51_0.24_264)]">密文</span>
-          <br/><span className="text-muted-foreground">（伺服器/IPFS）</span>
+          <span className="text-[oklch(0.51_0.24_264)]">{lang === 'zh' ? '密文' : 'Ciphertext'}</span>
+          <br/><span className="text-muted-foreground">{lang === 'zh' ? '（伺服器/IPFS）' : '(Server/IPFS)'}</span>
         </div>
         <div className="flex flex-col items-center gap-0.5">
           <ArrowRight className="w-4 h-4 text-[oklch(0.7_0.17_162)]" />
-          <span className="text-[oklch(0.7_0.17_162)]">解密</span>
+          <span className="text-[oklch(0.7_0.17_162)]">{lang === 'zh' ? '解密' : 'Decrypt'}</span>
         </div>
         <div className="text-center">
           <div className="w-8 h-8 rounded-lg bg-[oklch(0.7_0.17_162/0.2)] border border-[oklch(0.7_0.17_162/0.4)] flex items-center justify-center mb-1 mx-auto">
             <span className="text-[oklch(0.7_0.17_162)]">📝</span>
           </div>
-          <span className="text-[oklch(0.7_0.17_162)]">明文</span>
-          <br/><span className="text-muted-foreground">（瀏覽器）</span>
+          <span className="text-[oklch(0.7_0.17_162)]">{lang === 'zh' ? '明文' : 'Plaintext'}</span>
+          <br/><span className="text-muted-foreground">{lang === 'zh' ? '（瀏覽器）' : '(Browser)'}</span>
         </div>
       </div>
 
@@ -138,11 +140,11 @@ export default function E2EEncryptPanel() {
       {!encryptedPayload && (
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-muted-foreground mb-1.5 block">明文訊息</label>
+            <label className="text-xs text-muted-foreground mb-1.5 block">{t('e2ePlaintext')}</label>
             <Textarea
               value={plaintext}
               onChange={e => setPlaintext(e.target.value)}
-              placeholder="輸入要加密的文字..."
+              placeholder={t('e2ePlaintextPlaceholder')}
               className="bg-[oklch(0.14_0.015_265/0.5)] border-border text-sm resize-none h-20"
               maxLength={1000}
             />
@@ -154,9 +156,9 @@ export default function E2EEncryptPanel() {
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
             {isEncrypting ? (
-              <><RefreshCw className="w-4 h-4 mr-2 animate-spin" />加密中...</>
+              <><RefreshCw className="w-4 h-4 mr-2 animate-spin" />{t('e2eEncryptingBtn')}</>
             ) : (
-              <><Lock className="w-4 h-4 mr-2" />在瀏覽器中加密</>
+              <><Lock className="w-4 h-4 mr-2" />{t('e2eEncryptBtn')}</>
             )}
           </Button>
         </div>
@@ -176,7 +178,7 @@ export default function E2EEncryptPanel() {
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-1.5">
                     <Key className="w-3.5 h-3.5 text-[oklch(0.75_0.18_75)]" />
-                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">AES-256 金鑰（僅限瀏覽器）</span>
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{lang === 'zh' ? 'AES-256 金鑰（僅限瀏覽器）' : 'AES-256 Key (browser only)'}</span>
                   </div>
                   <button onClick={() => copyToClipboard(keyB64, 'Key')}>
                     <Copy className="w-3 h-3 text-muted-foreground hover:text-foreground" />
@@ -186,7 +188,7 @@ export default function E2EEncryptPanel() {
                   {truncateB64(keyB64, 12)}
                 </code>
                 <p className="text-[10px] text-muted-foreground mt-1">
-                  此金鑰永遠不會離開您的瀏覽器。伺服器無法在沒有它的情況下解密。
+                  {lang === 'zh' ? '此金鑰永遠不會離開您的瀏覽器。伺服器無法在沒有它的情況下解密。' : 'This key never leaves your browser. The server cannot decrypt without it.'}
                 </p>
               </div>
             )}
@@ -194,7 +196,7 @@ export default function E2EEncryptPanel() {
             {/* Ciphertext */}
             <div className="p-3 rounded-lg bg-[oklch(0.51_0.24_264/0.08)] border border-[oklch(0.51_0.24_264/0.25)]">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">密文（伺服器儲存此內容）</span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{lang === 'zh' ? '密文（伺服器儲存此內容）' : 'Ciphertext (server stores this)'}</span>
                 <button onClick={() => copyToClipboard(encryptedPayload.ciphertext, 'Ciphertext')}>
                   <Copy className="w-3 h-3 text-muted-foreground hover:text-foreground" />
                 </button>
@@ -207,7 +209,7 @@ export default function E2EEncryptPanel() {
             {/* IV */}
             <div className="p-3 rounded-lg bg-[oklch(0.14_0.015_265/0.5)] border border-border">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">IV / Nonce（12 位元組，隨機）</span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{lang === 'zh' ? 'IV / Nonce（12 位元組，隨機）' : 'IV / Nonce (12 bytes, random)'}</span>
               </div>
               <code className="crypto-addr text-muted-foreground text-[10px]">
                 {encryptedPayload.iv}
@@ -216,8 +218,8 @@ export default function E2EEncryptPanel() {
 
             {/* Algorithm info */}
             <div className="flex items-center gap-4 text-[10px] text-muted-foreground px-1">
-              <span>演算法：<span className="text-foreground">{encryptedPayload.algorithm}</span></span>
-              <span>大小：<span className="text-foreground">{encryptedPayload.ciphertext.length} 字元</span></span>
+              <span>{lang === 'zh' ? '演算法' : 'Algorithm'}：<span className="text-foreground">{encryptedPayload.algorithm}</span></span>
+              <span>{lang === 'zh' ? '大小' : 'Size'}：<span className="text-foreground">{encryptedPayload.ciphertext.length} {lang === 'zh' ? '字元' : 'chars'}</span></span>
             </div>
 
             {/* Decrypted result */}
@@ -230,7 +232,7 @@ export default function E2EEncryptPanel() {
                 >
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <Unlock className="w-3.5 h-3.5 text-[oklch(0.7_0.17_162)]" />
-                    <span className="text-[10px] text-[oklch(0.7_0.17_162)] uppercase tracking-wider">已解密（僅限瀏覽器）</span>
+                    <span className="text-[10px] text-[oklch(0.7_0.17_162)] uppercase tracking-wider">{lang === 'zh' ? '已解密（僅限瀏覽器）' : 'Decrypted (browser only)'}</span>
                   </div>
                   <p className="text-sm text-foreground">{decryptedText}</p>
                 </motion.div>
@@ -247,9 +249,9 @@ export default function E2EEncryptPanel() {
                   variant="outline"
                 >
                   {isDecrypting ? (
-                    <><RefreshCw className="w-4 h-4 mr-2 animate-spin" />解密中...</>
+                    <><RefreshCw className="w-4 h-4 mr-2 animate-spin" />{t('e2eDecryptingBtn')}</>
                   ) : (
-                    <><Unlock className="w-4 h-4 mr-2" />解密</>
+                    <><Unlock className="w-4 h-4 mr-2" />{t('e2eDecryptBtn')}</>
                   )}
                 </Button>
               )}
@@ -260,7 +262,7 @@ export default function E2EEncryptPanel() {
                 size={decryptedText ? 'default' : 'icon'}
               >
                 <RefreshCw className="w-4 h-4" />
-                {decryptedText && <span className="ml-2">重置</span>}
+                {decryptedText && <span className="ml-2">{lang === 'zh' ? '重置' : 'Reset'}</span>}
               </Button>
             </div>
           </motion.div>

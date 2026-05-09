@@ -12,6 +12,7 @@
  * - Show capacity indicator
  */
 
+import { useI18n } from "@/contexts/I18nContext";
 import { useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,6 +35,7 @@ import {
 import { generateAESKey, encryptData, decryptData, exportAESKey, importAESKey } from "@/lib/e2eEncryption";
 
 export default function SteganographyPanel() {
+  const { t, lang } = useI18n();
   // Encode state
   const [carrierImage, setCarrierImage] = useState<string | null>(null);
   const [secretMessage, setSecretMessage] = useState("此訊息隱藏在圖片素素中。");

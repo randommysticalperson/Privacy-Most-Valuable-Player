@@ -4,6 +4,7 @@
  * Demonstrates: Laplace mechanism noise injection for page view statistics
  */
 
+import { useI18n } from "@/contexts/I18nContext";
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -21,6 +22,7 @@ import {
 const budgetTracker = new PrivacyBudgetTracker(10.0);
 
 export default function DPAnalyticsPanel() {
+  const { t, lang } = useI18n();
   const [epsilon, setEpsilon] = useState(1.0);
   const [stats, setStats] = useState<PageViewStats[] | null>(null);
   const [budgetStatus, setBudgetStatus] = useState(budgetTracker.getStatus());
