@@ -261,3 +261,8 @@
 .animate-spin-slow { animation: spin-slow 8s linear infinite; }
 .animate-fade-in-up { animation: fadeInUp 0.5s ease forwards; }
 .animate-proving { animation: proving-pulse 1.5s ease-in-out infinite; }
+
+/* Safe area for iOS bottom notch (used by MobileBottomNav) */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
