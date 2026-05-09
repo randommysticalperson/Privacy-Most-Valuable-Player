@@ -1,5 +1,5 @@
 /**
- * HomomorphicPanel — Homomorphic Encryption UI
+ * HomomorphicPanel — 同態加密 UI
  * Design: Zero-Knowledge Glass — Dark Space Glassmorphism
  *
  * Demonstrates BFV homomorphic encryption:
@@ -81,7 +81,7 @@ export default function HomomorphicPanel() {
     const a = parseValues(valuesA);
     const b = parseValues(valuesB);
     if (a.length === 0 || b.length === 0) {
-      toast.error('Enter valid comma-separated integers');
+      toast.error('請輸入有效的逗號分隔整數');
       return;
     }
     setCtA(encryptBFV(a, keyPair));
@@ -116,7 +116,7 @@ export default function HomomorphicPanel() {
         isCorrect: true,
         timeMs,
       });
-      toast.success(`Homomorphic ${op === 'add' ? 'addition' : 'multiplication'} complete!`);
+      toast.success(`同態${op === 'add' ? '加法' : '乘法'}完成！`);
     } finally {
       setIsComputing(false);
     }
@@ -124,12 +124,12 @@ export default function HomomorphicPanel() {
 
   const handleRunVoting = useCallback(() => {
     if (!keyPair) {
-      toast.error('Generate keys first');
+      toast.error('請先生成金鑰');
       return;
     }
     const result = simulatePrivateVoting(votes, keyPair);
     setVoteResult(result);
-    toast.success(`Private vote tally: ${result.yesVotes}/${result.voterCount} yes`);
+    toast.success(`秘密投票結果：${result.yesVotes}/${result.voterCount} 同意`);
   }, [keyPair, votes]);
 
   const toggleVote = (i: number) => {
@@ -151,9 +151,9 @@ export default function HomomorphicPanel() {
           </div>
           <div>
             <h3 className="font-semibold text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              Homomorphic Encryption
+              同態加密
             </h3>
-            <p className="text-xs text-muted-foreground">BFV Scheme · Compute on Ciphertext</p>
+            <p className="text-xs text-muted-foreground">BFV 方案 · 對密文進行運算</p>
           </div>
         </div>
         <Badge variant="outline" className="text-xs text-[oklch(0.75_0.18_75)] border-[oklch(0.75_0.18_75/0.4)]">
@@ -164,13 +164,13 @@ export default function HomomorphicPanel() {
       {/* Concept explanation */}
       <div className="p-3 rounded-lg bg-[oklch(0.14_0.015_265/0.5)] border border-border text-xs text-muted-foreground space-y-1">
         <p className="text-foreground font-medium text-[11px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-          Key Property
+          核心特性
         </p>
         <p>
           <span className="font-mono text-[oklch(0.75_0.18_75)]">Enc(a) ⊕ Enc(b) = Enc(a+b)</span>
-          {' '}— the server computes on encrypted data <span className="text-foreground">without ever decrypting it</span>.
+          {' '}— 伺服器對加密資料進行運算，<span className="text-foreground">永遠不解密</span>。
         </p>
-        <p>Scheme: BFV (Brakerski/Fan-Vercauteren) · Polynomial modulus: {4096} · Plain modulus: 1,032,193</p>
+        <p>方案：BFV（Brakerski/Fan-Vercauteren）· 多項式模數：{4096} · 明文模數：1,032,193</p>
       </div>
 
       {/* Key generation */}
@@ -183,9 +183,9 @@ export default function HomomorphicPanel() {
           style={{ fontFamily: "'Space Grotesk', sans-serif" }}
         >
           {isGeneratingKeys ? (
-            <><RefreshCw className="w-4 h-4 mr-2 animate-spin" />Generating...</>
+            <><RefreshCw className="w-4 h-4 mr-2 animate-spin" />生成中...</>
           ) : (
-            <><Key className="w-4 h-4 mr-2" />{keyPair ? 'Regenerate' : 'Generate'} BFV Key Pair</>
+            <><Key className="w-4 h-4 mr-2" />{keyPair ? '重新生成' : '生成'} BFV 金鑰對</>
           )}
         </Button>
 
@@ -201,14 +201,14 @@ export default function HomomorphicPanel() {
                 className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-full px-1"
               >
                 {showKeyDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                {showKeyDetails ? 'Hide' : 'Show'} key details
+                {showKeyDetails ? '隱藏' : '顯示'}金鑰詳情
               </button>
               {showKeyDetails && (
                 <div className="mt-2 space-y-2">
                   {[
-                    { label: 'Public Key', value: keyPair.publicKey, color: 'text-[oklch(0.7_0.17_162)]' },
-                    { label: 'Secret Key (browser only)', value: keyPair.secretKey, color: 'text-[oklch(0.75_0.18_75)]' },
-                    { label: 'Relinearization Key', value: keyPair.relinKey, color: 'text-muted-foreground' },
+                    { label: '公開金鑰', value: keyPair.publicKey, color: 'text-[oklch(0.7_0.17_162)]' },
+                    { label: '秘密金鑰（僅瀏覽器）', value: keyPair.secretKey, color: 'text-[oklch(0.75_0.18_75)]' },
+                    { label: '重線性化金鑰', value: keyPair.relinKey, color: 'text-muted-foreground' },
                   ].map(({ label, value, color }) => (
                     <div key={label} className="p-2 rounded-lg bg-[oklch(0.14_0.015_265/0.5)] border border-border">
                       <p className="text-[10px] text-muted-foreground mb-0.5">{label}</p>
@@ -225,10 +225,10 @@ export default function HomomorphicPanel() {
       <Tabs defaultValue="arithmetic">
         <TabsList className="w-full bg-[oklch(0.14_0.015_265/0.5)] border border-border">
           <TabsTrigger value="arithmetic" className="flex-1 text-xs">
-            <Plus className="w-3.5 h-3.5 mr-1.5" />Arithmetic
+            <Plus className="w-3.5 h-3.5 mr-1.5" />算術運算
           </TabsTrigger>
           <TabsTrigger value="voting" className="flex-1 text-xs">
-            <Vote className="w-3.5 h-3.5 mr-1.5" />Private Voting
+            <Vote className="w-3.5 h-3.5 mr-1.5" />秘密投票
           </TabsTrigger>
         </TabsList>
 
@@ -236,7 +236,7 @@ export default function HomomorphicPanel() {
         <TabsContent value="arithmetic" className="space-y-4 mt-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-muted-foreground mb-1.5 block">Array A</label>
+              <label className="text-xs text-muted-foreground mb-1.5 block">陣列 A</label>
               <input
                 value={valuesA}
                 onChange={e => { setValuesA(e.target.value); setCtA(null); setComputeResult(null); }}
@@ -245,7 +245,7 @@ export default function HomomorphicPanel() {
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1.5 block">Array B</label>
+              <label className="text-xs text-muted-foreground mb-1.5 block">陣列 B</label>
               <input
                 value={valuesB}
                 onChange={e => { setValuesB(e.target.value); setCtB(null); setComputeResult(null); }}
@@ -261,7 +261,7 @@ export default function HomomorphicPanel() {
             variant="outline"
             className="w-full border-border text-muted-foreground hover:text-foreground"
           >
-            <Key className="w-4 h-4 mr-2" />Encrypt Both Arrays
+            <Key className="w-4 h-4 mr-2" />加密兩個陣列
           </Button>
 
           {/* Ciphertext display */}
@@ -279,7 +279,7 @@ export default function HomomorphicPanel() {
                   <div key={label} className="p-2.5 rounded-lg bg-[oklch(0.14_0.015_265/0.5)] border border-border">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</span>
-                      <span className="text-[10px] text-muted-foreground">noise: {ct.noiseBudget} bits</span>
+                      <span className="text-[10px] text-muted-foreground">噪音：{ct.noiseBudget} 位</span>
                     </div>
                     <code className={`text-[10px] font-mono ${color}`}>{formatCiphertext(ct)}</code>
                   </div>
@@ -292,14 +292,14 @@ export default function HomomorphicPanel() {
                     disabled={isComputing}
                     className="flex-1 bg-[oklch(0.51_0.24_264)] hover:bg-[oklch(0.55_0.24_264)] text-white text-xs"
                   >
-                    <Plus className="w-3.5 h-3.5 mr-1.5" />HE Add
+                    <Plus className="w-3.5 h-3.5 mr-1.5" />HE 加法
                   </Button>
                   <Button
                     onClick={() => handleCompute('mul')}
                     disabled={isComputing}
                     className="flex-1 bg-[oklch(0.51_0.24_264/0.7)] hover:bg-[oklch(0.51_0.24_264/0.9)] text-white text-xs"
                   >
-                    <X className="w-3.5 h-3.5 mr-1.5" />HE Multiply
+                    <X className="w-3.5 h-3.5 mr-1.5" />HE 乘法
                   </Button>
                 </div>
               </motion.div>
@@ -318,7 +318,7 @@ export default function HomomorphicPanel() {
                   <div className="flex items-center gap-2 mb-2">
                     <CheckCircle2 className="w-4 h-4 text-[oklch(0.7_0.17_162)]" />
                     <span className="text-xs font-semibold text-[oklch(0.7_0.17_162)]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                      Homomorphic {computeResult.operation === 'add' ? 'Addition' : 'Multiplication'} Correct ✓
+                      同態{computeResult.operation === 'add' ? '加法' : '乘法'}正確 ✓
                     </span>
                     <span className="text-[10px] text-muted-foreground ml-auto">{computeResult.timeMs.toFixed(1)}ms</span>
                   </div>
@@ -341,12 +341,12 @@ export default function HomomorphicPanel() {
                   </div>
 
                   <p className="text-[10px] text-muted-foreground mt-2">
-                    Server computed this result on Enc(A) and Enc(B) — it never saw the plaintext values.
+                    伺服器對 Enc(A) 和 Enc(B) 進行計算——它從未看到明文數字。
                   </p>
                 </div>
 
                 <div className="p-2.5 rounded-lg bg-[oklch(0.14_0.015_265/0.5)] border border-border">
-                  <p className="text-[10px] text-muted-foreground mb-1">Result ciphertext (noise budget: {computeResult.ctResult.noiseBudget} bits)</p>
+                  <p className="text-[10px] text-muted-foreground mb-1">結果密文（噪音預算：{computeResult.ctResult.noiseBudget} 位）</p>
                   <code className="text-[10px] font-mono text-[oklch(0.51_0.24_264)]">{formatCiphertext(computeResult.ctResult)}</code>
                 </div>
               </motion.div>
@@ -357,12 +357,12 @@ export default function HomomorphicPanel() {
         {/* VOTING TAB */}
         <TabsContent value="voting" className="space-y-4 mt-4">
           <div className="p-3 rounded-lg bg-[oklch(0.14_0.015_265/0.5)] border border-border text-xs text-muted-foreground">
-            <p>Each voter encrypts their vote (Yes=1, No=0). The server sums the encrypted votes and returns the encrypted total — <span className="text-foreground">individual votes are never revealed</span>.</p>
+            <p>每位投票者加密其投票（同意=1，反對=0）。伺服器對加密票數求和後回傳加密總數——<span className="text-foreground">個別投票永遠不會暴露</span>。</p>
           </div>
 
           {/* Voter grid */}
           <div>
-            <label className="text-xs text-muted-foreground mb-2 block">Voter Ballots (click to toggle)</label>
+            <label className="text-xs text-muted-foreground mb-2 block">投票者票券（點擊切換）</label>
             <div className="grid grid-cols-4 gap-2">
               {votes.map((v, i) => (
                 <button
@@ -375,9 +375,9 @@ export default function HomomorphicPanel() {
                   }`}
                   style={{ fontFamily: "'Space Grotesk', sans-serif" }}
                 >
-                  Voter {i + 1}
+                  投票者 {i + 1}
                   <br />
-                  <span className="text-[10px]">{v === 1 ? 'YES' : 'NO'}</span>
+                  <span className="text-[10px]">{v === 1 ? '同意' : '反對'}</span>
                 </button>
               ))}
             </div>
@@ -389,7 +389,7 @@ export default function HomomorphicPanel() {
             className="w-full bg-[oklch(0.51_0.24_264)] hover:bg-[oklch(0.55_0.24_264)] text-white"
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
-            <Vote className="w-4 h-4 mr-2" />Run Private Vote Tally
+            <Vote className="w-4 h-4 mr-2" />執行秘密投票統計
           </Button>
 
           <AnimatePresence>
@@ -401,12 +401,12 @@ export default function HomomorphicPanel() {
               >
                 {/* Result */}
                 <div className="p-4 rounded-lg bg-[oklch(0.7_0.17_162/0.08)] border border-[oklch(0.7_0.17_162/0.3)] text-center">
-                  <p className="text-xs text-muted-foreground mb-1">Final Tally (decrypted by key holder)</p>
+                  <p className="text-xs text-muted-foreground mb-1">最終統計（由金鑰持有者解密）</p>
                   <p className="text-3xl font-bold text-[oklch(0.7_0.17_162)]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                     {voteResult.yesVotes} / {voteResult.voterCount}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {voteResult.yesVotes} YES · {voteResult.voterCount - voteResult.yesVotes} NO
+                    {voteResult.yesVotes} 同意 · {voteResult.voterCount - voteResult.yesVotes} 反對
                   </p>
                   <div className="w-full h-2 rounded-full bg-[oklch(1_0_0/0.1)] mt-3 overflow-hidden">
                     <div
@@ -422,22 +422,22 @@ export default function HomomorphicPanel() {
                   className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground w-full px-1"
                 >
                   {showVoteDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                  {showVoteDetails ? 'Hide' : 'Show'} encrypted ballots
+                  {showVoteDetails ? '隱藏' : '顯示'}加密票券
                 </button>
 
                 {showVoteDetails && (
                   <div className="space-y-1.5">
                     {voteResult.encryptedVotes.map((ct, i) => (
                       <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-[oklch(0.14_0.015_265/0.5)] border border-border">
-                        <span className="text-[10px] text-muted-foreground w-14 shrink-0">Voter {i + 1}</span>
+                        <span className="text-[10px] text-muted-foreground w-14 shrink-0">投票者 {i + 1}</span>
                         <code className="text-[10px] font-mono text-[oklch(0.51_0.24_264)] flex-1 truncate">
                           {formatCiphertext(ct, 3)}
                         </code>
-                        <span className="text-[10px] text-muted-foreground shrink-0">(server sees this)</span>
+                        <span className="text-[10px] text-muted-foreground shrink-0">（伺服器看到此）</span>
                       </div>
                     ))}
                     <p className="text-[10px] text-muted-foreground px-1">
-                      Server cannot determine individual votes from these ciphertexts.
+                      伺服器無法從這些密文中判斷個別投票。
                     </p>
                   </div>
                 )}

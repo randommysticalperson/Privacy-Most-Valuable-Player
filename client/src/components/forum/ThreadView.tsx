@@ -54,7 +54,7 @@ export default function ThreadView({ thread, onBack, extraPosts, onPostAdded }: 
         const payload = await encryptData(content, key);
         encryptedContent = payload.ciphertext;
         const exportedKey = await exportAESKey(key);
-        toast.success("Post encrypted. Save your key: " + exportedKey.slice(0, 16) + "...", { duration: 8000 });
+        toast.success("帖子已加密，請保存您的金鑰：" + exportedKey.slice(0, 16) + "...", { duration: 8000 });
       }
 
       if (useStego) {
@@ -78,9 +78,9 @@ export default function ThreadView({ thread, onBack, extraPosts, onPostAdded }: 
 
       onPostAdded(post);
       setContent("");
-      if (!useEncryption) toast.success("Reply posted anonymously");
+      if (!useEncryption) toast.success("匿名回覆已發布");
     } catch (err) {
-      toast.error("Failed to post reply");
+      toast.error("發布回覆失敗");
     } finally {
       setIsPosting(false);
     }
@@ -100,7 +100,7 @@ export default function ThreadView({ thread, onBack, extraPosts, onPostAdded }: 
         onClick={onBack}
         className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
       >
-        <ArrowLeft className="w-3.5 h-3.5" />Back to threads
+        <ArrowLeft className="w-3.5 h-3.5" />返回討論串列表
       </button>
 
       <div className="p-4 rounded-xl border border-[oklch(0.51_0.24_264/0.25)] bg-[oklch(0.51_0.24_264/0.06)]">
@@ -161,7 +161,7 @@ export default function ThreadView({ thread, onBack, extraPosts, onPostAdded }: 
             {post.stegoImage && (
               <div className="mt-2">
                 <img src={post.stegoImage} alt="stego" className="w-24 h-18 rounded-lg border border-border object-cover" />
-                <p className="text-[9px] text-muted-foreground mt-0.5">Stego image attached</p>
+                <p className="text-[9px] text-muted-foreground mt-0.5">附件隱寫圖片</p>
               </div>
             )}
 
@@ -178,7 +178,7 @@ export default function ThreadView({ thread, onBack, extraPosts, onPostAdded }: 
                 {post.likes + (likedPosts.has(post.id) ? 1 : 0)}
               </button>
               <button
-                onClick={() => { navigator.clipboard.writeText(post.content); toast.success("Copied"); }}
+                onClick={() => { navigator.clipboard.writeText(post.content); toast.success("已複製"); }}
                 className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Copy className="w-3.5 h-3.5" />Copy
@@ -191,12 +191,12 @@ export default function ThreadView({ thread, onBack, extraPosts, onPostAdded }: 
       {isConnected ? (
         <div className="p-4 rounded-xl border border-border bg-[oklch(0.11_0.01_265/0.5)] space-y-3">
           <p className="text-xs font-medium text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            Reply as <span className="font-mono text-[oklch(0.7_0.17_162)]">{userInfo?.alias}</span>
+            以 <span className="font-mono text-[oklch(0.7_0.17_162)]">{userInfo?.alias}</span> 的身份回覆
           </p>
           <Textarea
             value={content}
             onChange={e => setContent(e.target.value)}
-            placeholder="Write your reply..."
+            placeholder="輸入回覆內容..."
             className="bg-[oklch(0.14_0.015_265/0.5)] border-border text-sm resize-none h-24"
           />
           <div className="flex items-center gap-4">
@@ -206,7 +206,7 @@ export default function ThreadView({ thread, onBack, extraPosts, onPostAdded }: 
                 <span className={`absolute w-2.5 h-2.5 rounded-full bg-white transition-all ${useEncryption ? "left-[14px]" : "left-0.5"}`} />
               </div>
               <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                <Lock className="w-3 h-3" />E2E Encrypt
+                <Lock className="w-3 h-3" />E2E 加密
               </span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -215,7 +215,7 @@ export default function ThreadView({ thread, onBack, extraPosts, onPostAdded }: 
                 <span className={`absolute w-2.5 h-2.5 rounded-full bg-white transition-all ${useStego ? "left-[14px]" : "left-0.5"}`} />
               </div>
               <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                <Eye className="w-3 h-3" />Stego Image
+                <Eye className="w-3 h-3" />隱寫圖片
               </span>
             </label>
             <div className="flex-1" />
@@ -226,15 +226,15 @@ export default function ThreadView({ thread, onBack, extraPosts, onPostAdded }: 
               className="h-7 text-xs bg-[oklch(0.51_0.24_264)] hover:bg-[oklch(0.55_0.24_264)] text-white"
             >
               {isPosting ? <RefreshCw className="w-3 h-3 mr-1 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
-              {isPosting ? "Posting..." : "Reply"}
+              {isPosting ? "發布中..." : "回覆"}
             </Button>
           </div>
         </div>
       ) : (
         <div className="p-4 rounded-xl border border-border text-center space-y-2">
-          <p className="text-xs text-muted-foreground">Connect your wallet to reply anonymously</p>
+          <p className="text-xs text-muted-foreground">連接錢包即可匿名回覆</p>
           <Button onClick={connect} size="sm" variant="outline" className="h-7 text-xs border-[oklch(0.51_0.24_264/0.4)] text-[oklch(0.51_0.24_264)]">
-            Connect Wallet
+            連接錢包
           </Button>
         </div>
       )}

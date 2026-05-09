@@ -28,7 +28,7 @@ export default function ForumHeader({ onNewThread }: ForumHeaderProps) {
 
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
-    toast.success(`${label} copied`);
+    toast.success(`${label} 已複製`);
   };
 
   return (
@@ -40,13 +40,13 @@ export default function ForumHeader({ onNewThread }: ForumHeaderProps) {
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search threads..."
+            placeholder="搜尋討論串..."
             className="w-full h-8 pl-8 pr-3 rounded-lg bg-[oklch(1_0_0/0.05)] border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           />
         </div>
         <div className="flex-1" />
         <button
-          onClick={() => toast.info("Notifications coming soon")}
+          onClick={() => toast.info("通知功能即將推出")}
           className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-[oklch(1_0_0/0.05)] transition-colors"
         >
           <Bell className="w-4 h-4" />
@@ -59,7 +59,7 @@ export default function ForumHeader({ onNewThread }: ForumHeaderProps) {
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
             <Plus className="w-3.5 h-3.5 mr-1" />
-            New Thread
+            新增討論串
           </Button>
         )}
         {!isConnected ? (
@@ -72,7 +72,7 @@ export default function ForumHeader({ onNewThread }: ForumHeaderProps) {
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
             <Wallet className="w-3.5 h-3.5 mr-1.5" />
-            {isConnecting ? "Connecting..." : "Connect Wallet"}
+            {isConnecting ? "連接中..." : "連接錢包"}
           </Button>
         ) : (
           <DropdownMenu>
@@ -84,30 +84,30 @@ export default function ForumHeader({ onNewThread }: ForumHeaderProps) {
                   </span>
                 </div>
                 <span className="text-[11px] font-mono text-[oklch(0.7_0.17_162)] max-w-[80px] truncate">
-                  {userInfo?.alias ?? "anon"}
+                  {userInfo?.alias ?? "匿名"}
                 </span>
                 <ChevronDown className="w-3 h-3 text-muted-foreground" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52 bg-[oklch(0.12_0.01_265)] border-border">
               <div className="px-3 py-2 space-y-0.5">
-                <p className="text-[10px] text-muted-foreground">Signed in as</p>
+                <p className="text-[10px] text-muted-foreground">已登入為</p>
                 <p className="text-xs font-mono text-foreground">{userInfo?.alias}</p>
               </div>
               <DropdownMenuSeparator />
               {userInfo?.address && (
                 <DropdownMenuItem onClick={() => handleCopy(userInfo.address, "Address")} className="text-xs cursor-pointer">
-                  <Copy className="w-3.5 h-3.5 mr-2" />Copy address
+                  <Copy className="w-3.5 h-3.5 mr-2" />複製地址
                 </DropdownMenuItem>
               )}
               {userInfo?.did && (
                 <DropdownMenuItem onClick={() => handleCopy(userInfo.did, "DID")} className="text-xs cursor-pointer">
-                  <Copy className="w-3.5 h-3.5 mr-2" />Copy DID
+                  <Copy className="w-3.5 h-3.5 mr-2" />複製 DID
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={disconnect} className="text-xs text-[oklch(0.65_0.22_25)] cursor-pointer focus:text-[oklch(0.65_0.22_25)]">
-                <LogOut className="w-3.5 h-3.5 mr-2" />Disconnect
+                <LogOut className="w-3.5 h-3.5 mr-2" />中斷連接
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

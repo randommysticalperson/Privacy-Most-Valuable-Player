@@ -33,13 +33,13 @@ export default function ZKPProofPanel() {
   const isGenerating = ['building-group', 'generating-proof', 'verifying'].includes(status);
 
   const statusLabel = {
-    idle: identityInfo ? 'Ready to Prove' : 'Awaiting Identity',
-    'creating-identity': 'Creating Identity...',
+    idle: identityInfo ? '準備生成證明' : '等待身份',
+    'creating-identity': '建立身份中...',
     'building-group': 'Building Merkle Tree...',
-    'generating-proof': 'Generating ZKP...',
-    verifying: 'Verifying Proof...',
-    verified: 'Proof Verified',
-    failed: 'Proof Failed',
+    'generating-proof': '生成 ZKP 證明中...',
+    verifying: '驗證證明中...',
+    verified: '證明已驗證',
+    failed: '證明失敗',
   }[status];
 
   const handleGenerate = async () => {
@@ -111,7 +111,7 @@ export default function ZKPProofPanel() {
             <h3 className="font-semibold text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
               Semaphore ZKP
             </h3>
-            <p className="text-xs text-muted-foreground">Anonymous Group Membership Proof</p>
+            <p className="text-xs text-muted-foreground">匿名群組成員身份證明</p>
           </div>
         </div>
         <Badge
@@ -130,7 +130,7 @@ export default function ZKPProofPanel() {
       <div className="p-3 rounded-lg bg-[oklch(0.14_0.015_265/0.5)] border border-border">
         <div className="flex items-center gap-2 mb-2">
           <Users className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">Group Merkle Tree ({groupSize} members)</span>
+          <span className="text-xs text-muted-foreground">群組 Merkle 樹（{groupSize} 位成員）</span>
         </div>
         {renderMerkleTree()}
       </div>
@@ -138,7 +138,7 @@ export default function ZKPProofPanel() {
       {/* Not connected */}
       {!isConnected && (
         <p className="text-xs text-muted-foreground text-center py-2">
-          Connect your wallet first to create a Semaphore identity
+          請先連接錢包以建立 Semaphore 身份
         </p>
       )}
 
@@ -146,16 +146,16 @@ export default function ZKPProofPanel() {
       {isConnected && identityInfo && status !== 'verified' && !isGenerating && (
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-muted-foreground mb-1.5 block">Anonymous Message</label>
+            <label className="text-xs text-muted-foreground mb-1.5 block">匿名訊息</label>
             <Input
               value={message}
               onChange={e => setMessage(e.target.value)}
-              placeholder="Enter your anonymous message..."
+              placeholder="輸入您的匿名訊息..."
               className="bg-[oklch(0.14_0.015_265/0.5)] border-border text-sm font-mono"
               maxLength={64}
             />
             <p className="text-[10px] text-muted-foreground mt-1">
-              This message is included in the proof but cannot be linked to your identity
+              此訊息包含在證明中，但無法追溯到您的身份
             </p>
           </div>
           <Button
@@ -165,7 +165,7 @@ export default function ZKPProofPanel() {
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
             <Zap className="w-4 h-4 mr-2" />
-            Generate ZKP Proof
+            生成 ZKP 證明
           </Button>
         </div>
       )}
@@ -182,9 +182,9 @@ export default function ZKPProofPanel() {
           <div className="text-center">
             <p className="text-sm text-[oklch(0.75_0.18_75)]">{statusLabel}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              {status === 'building-group' && 'Constructing Merkle tree from group members...'}
-              {status === 'generating-proof' && 'Running Groth16 circuit — this may take a moment...'}
-              {status === 'verifying' && 'Verifying proof validity locally...'}
+              {status === 'building-group' && '正從群組成員構建 Merkle 樹...'}
+              {status === 'generating-proof' && '執行 Groth16 電路中，請稍候...'}
+              {status === 'verifying' && '在本地驗證證明有效性...'}
             </p>
           </div>
         </div>
@@ -231,10 +231,10 @@ export default function ZKPProofPanel() {
               <div>
                 <p className={`text-sm font-semibold ${proofResult.isValid ? 'text-[oklch(0.7_0.17_162)]' : 'text-[oklch(0.65_0.22_25)]'}`}
                    style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                  {proofResult.isValid ? 'Proof Valid ✓' : 'Proof Invalid ✗'}
+                  {proofResult.isValid ? '證明有效 ✓' : '證明無效 ✗'}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Membership proved without revealing identity
+                  已證明成員身份，未暴露真實身份
                 </p>
               </div>
             </div>
@@ -242,7 +242,7 @@ export default function ZKPProofPanel() {
             {/* Key proof fields */}
             <div className="space-y-2">
               <div className="p-2.5 rounded-lg bg-[oklch(0.14_0.015_265/0.5)] border border-border">
-                <p className="text-[10px] text-muted-foreground mb-0.5 uppercase tracking-wider">Nullifier (anti-double-signal)</p>
+                <p className="text-[10px] text-muted-foreground mb-0.5 uppercase tracking-wider">無效化符（防重復信號）</p>
                 <code className="crypto-addr text-[oklch(0.85_0.005_265)] text-[10px] break-all">
                   {proofResult.nullifier.slice(0, 30)}...
                 </code>
@@ -267,7 +267,7 @@ export default function ZKPProofPanel() {
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               {showProofDetails ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-              {showProofDetails ? 'Hide' : 'Show'} Groth16 proof points
+              {showProofDetails ? '隱藏' : '顯示'} Groth16 證明點
             </button>
 
             <AnimatePresence>
@@ -292,7 +292,7 @@ export default function ZKPProofPanel() {
               className="w-full border-border text-muted-foreground hover:text-foreground"
             >
               <RefreshCw className="w-3.5 h-3.5 mr-2" />
-              Generate New Proof
+              重新生成證明
             </Button>
           </motion.div>
         )}

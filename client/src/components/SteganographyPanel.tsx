@@ -36,7 +36,7 @@ import { generateAESKey, encryptData, decryptData, exportAESKey, importAESKey } 
 export default function SteganographyPanel() {
   // Encode state
   const [carrierImage, setCarrierImage] = useState<string | null>(null);
-  const [secretMessage, setSecretMessage] = useState("This message is hidden inside the image pixels.");
+  const [secretMessage, setSecretMessage] = useState("此訊息隱藏在圖片素素中。");
   const [useEncryption, setUseEncryption] = useState(true);
   const [stegoResult, setStegoResult] = useState<StegoResult | null>(null);
   const [psnr, setPsnr] = useState<number | null>(null);
@@ -115,7 +115,7 @@ export default function SteganographyPanel() {
 
       toast.success(`Message hidden! PSNR: ${psnrValue.toFixed(1)} dB${useEncryption ? ' (encrypted)' : ''}`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Encoding failed');
+      toast.error(err instanceof Error ? err.message : '編碼失敗');
     } finally {
       setIsEncoding(false);
     }
@@ -128,7 +128,7 @@ export default function SteganographyPanel() {
     a.href = stegoResult.imageDataUrl;
     a.download = 'stego-image.png';
     a.click();
-    toast.success('Stego image downloaded');
+    toast.success('隱寫圖片已下載');
   };
 
   // Extract message from stego image
@@ -165,9 +165,9 @@ export default function SteganographyPanel() {
       }
 
       setDecodedMessage(finalMessage);
-      toast.success(`Extracted ${result.messageBytes} bytes from image`);
+      toast.success(`已從圖片提取 ${result.messageBytes} 位元組`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Extraction failed');
+      toast.error(err instanceof Error ? err.message : '提取失敗');
     } finally {
       setIsDecoding(false);
     }
@@ -200,7 +200,7 @@ export default function SteganographyPanel() {
             <h3 className="font-semibold text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
               Steganography
             </h3>
-            <p className="text-xs text-muted-foreground">LSB Image Hiding · Invisible to the eye</p>
+            <p className="text-xs text-muted-foreground">LSB 圖片隱寫 · 肉眼不可見</p>
           </div>
         </div>
         <Badge variant="outline" className="text-xs text-[oklch(0.51_0.24_264)] border-[oklch(0.51_0.24_264/0.4)]">
@@ -210,16 +210,16 @@ export default function SteganographyPanel() {
 
       {/* Explanation */}
       <div className="p-3 rounded-lg bg-[oklch(0.14_0.015_265/0.5)] border border-border text-xs text-muted-foreground">
-        <p>Each pixel's RGB channels have their <span className="text-foreground font-mono">least significant bit</span> replaced with message bits. A 400×300 image can hide ~44 KB of text. The image looks identical to the human eye (PSNR &gt;50 dB).</p>
+        <p>每個像素的 RGB 通道的<span className="text-foreground font-mono">最低有效位</span>被訊息位取代。一張 400×300 圖片可隱藏約 44 KB 的文字。圖片外觀與原圖完全相同（PSNR &gt;50 dB）。</p>
       </div>
 
       <Tabs defaultValue="encode">
         <TabsList className="w-full bg-[oklch(0.14_0.015_265/0.5)] border border-border">
           <TabsTrigger value="encode" className="flex-1 text-xs">
-            <EyeOff className="w-3.5 h-3.5 mr-1.5" />Hide Message
+            <EyeOff className="w-3.5 h-3.5 mr-1.5" />隱藏訊息
           </TabsTrigger>
           <TabsTrigger value="decode" className="flex-1 text-xs">
-            <Eye className="w-3.5 h-3.5 mr-1.5" />Extract Message
+            <Eye className="w-3.5 h-3.5 mr-1.5" />提取訊息
           </TabsTrigger>
         </TabsList>
 
@@ -228,7 +228,7 @@ export default function SteganographyPanel() {
           {/* Carrier image */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs text-muted-foreground">Carrier Image</label>
+              <label className="text-xs text-muted-foreground">載體圖片</label>
               <div className="flex gap-2">
                 <Button
                   variant="outline"
@@ -236,7 +236,7 @@ export default function SteganographyPanel() {
                   onClick={handleGenerateCarrier}
                   className="h-7 text-xs border-border text-muted-foreground hover:text-foreground"
                 >
-                  <RefreshCw className="w-3 h-3 mr-1" />Generate
+                  <RefreshCw className="w-3 h-3 mr-1" />生成
                 </Button>
                 <Button
                   variant="outline"
@@ -244,7 +244,7 @@ export default function SteganographyPanel() {
                   onClick={() => encodeFileRef.current?.click()}
                   className="h-7 text-xs border-border text-muted-foreground hover:text-foreground"
                 >
-                  <Upload className="w-3 h-3 mr-1" />Upload
+                  <Upload className="w-3 h-3 mr-1" />上傳
                 </Button>
                 <input ref={encodeFileRef} type="file" accept="image/*" className="hidden" onChange={handleCarrierUpload} />
               </div>
@@ -256,7 +256,7 @@ export default function SteganographyPanel() {
                 {stegoResult && (
                   <div className="absolute top-2 right-2">
                     <Badge className="bg-[oklch(0.7_0.17_162/0.9)] text-white text-[10px]">
-                      <EyeOff className="w-2.5 h-2.5 mr-1" />Message Hidden
+                      <EyeOff className="w-2.5 h-2.5 mr-1" />訊息已隱藏
                     </Badge>
                   </div>
                 )}
@@ -267,18 +267,18 @@ export default function SteganographyPanel() {
                 onClick={handleGenerateCarrier}
               >
                 <ImageIcon className="w-8 h-8 text-muted-foreground mb-2" />
-                <p className="text-xs text-muted-foreground">Click to generate demo image</p>
+                <p className="text-xs text-muted-foreground">點擊生成示範圖片</p>
               </div>
             )}
           </div>
 
           {/* Message input */}
           <div>
-            <label className="text-xs text-muted-foreground mb-1.5 block">Secret Message</label>
+            <label className="text-xs text-muted-foreground mb-1.5 block">秘密訊息</label>
             <Textarea
               value={secretMessage}
               onChange={e => setSecretMessage(e.target.value)}
-              placeholder="Enter your secret message..."
+              placeholder="輸入您的秘密訊息..."
               className="bg-[oklch(0.14_0.015_265/0.5)] border-border text-sm resize-none h-16"
               maxLength={5000}
             />
@@ -299,10 +299,10 @@ export default function SteganographyPanel() {
             <div>
               <p className="text-xs font-medium flex items-center gap-1">
                 <Lock className="w-3 h-3 text-[oklch(0.51_0.24_264)]" />
-                Encrypt before hiding (AES-GCM-256)
+                隱藏前先加密（AES-GCM-256）
               </p>
               <p className="text-[10px] text-muted-foreground">
-                Double protection: encrypted ciphertext hidden in image
+                雙重保護：加密密文隱藏於圖片中
               </p>
             </div>
           </div>
@@ -314,9 +314,9 @@ export default function SteganographyPanel() {
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
             {isEncoding ? (
-              <><RefreshCw className="w-4 h-4 mr-2 animate-spin" />Encoding...</>
+              <><RefreshCw className="w-4 h-4 mr-2 animate-spin" />編碼中...</>
             ) : (
-              <><EyeOff className="w-4 h-4 mr-2" />Hide Message in Image</>
+              <><EyeOff className="w-4 h-4 mr-2" />將訊息隱藏到圖片</>
             )}
           </Button>
 
@@ -332,8 +332,8 @@ export default function SteganographyPanel() {
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { label: 'PSNR', value: psnr !== null ? `${psnr.toFixed(1)} dB` : '—', color: psnrColor },
-                    { label: 'Capacity Used', value: `${stegoResult.capacityPercent.toFixed(1)}%`, color: 'text-foreground' },
-                    { label: 'Hidden Bytes', value: `${stegoResult.messageBytes}`, color: 'text-foreground' },
+                    { label: '容量使用', value: `${stegoResult.capacityPercent.toFixed(1)}%`, color: 'text-foreground' },
+                    { label: '隱藏位元組', value: `${stegoResult.messageBytes}`, color: 'text-foreground' },
                   ].map(({ label, value, color }) => (
                     <div key={label} className="p-2 rounded-lg bg-[oklch(0.14_0.015_265/0.5)] border border-border text-center">
                       <p className="text-[10px] text-muted-foreground">{label}</p>
@@ -345,7 +345,7 @@ export default function SteganographyPanel() {
                 {/* AES key for encrypted stego */}
                 {exportedKey && (
                   <div className="p-3 rounded-lg bg-[oklch(0.75_0.18_75/0.08)] border border-[oklch(0.75_0.18_75/0.3)]">
-                    <p className="text-[10px] text-[oklch(0.75_0.18_75)] mb-1 uppercase tracking-wider">AES Decryption Key (save this!)</p>
+                    <p className="text-[10px] text-[oklch(0.75_0.18_75)] mb-1 uppercase tracking-wider">AES 解密金鑰（請保存！）</p>
                     <code className="text-[10px] font-mono text-foreground break-all">{exportedKey}</code>
                   </div>
                 )}
@@ -355,7 +355,7 @@ export default function SteganographyPanel() {
                   variant="outline"
                   className="w-full border-[oklch(0.7_0.17_162/0.4)] text-[oklch(0.7_0.17_162)] hover:bg-[oklch(0.7_0.17_162/0.1)]"
                 >
-                  <Download className="w-4 h-4 mr-2" />Download Stego Image (PNG)
+                  <Download className="w-4 h-4 mr-2" />下載隱寫圖片（PNG）
                 </Button>
               </motion.div>
             )}
@@ -366,14 +366,14 @@ export default function SteganographyPanel() {
         <TabsContent value="decode" className="space-y-4 mt-4">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs text-muted-foreground">Stego Image</label>
+              <label className="text-xs text-muted-foreground">隱寫圖片</label>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => decodeFileRef.current?.click()}
                 className="h-7 text-xs border-border text-muted-foreground hover:text-foreground"
               >
-                <Upload className="w-3 h-3 mr-1" />Upload
+                <Upload className="w-3 h-3 mr-1" />上傳
               </Button>
               <input ref={decodeFileRef} type="file" accept="image/png" className="hidden" onChange={handleDecodeUpload} />
             </div>
@@ -386,18 +386,18 @@ export default function SteganographyPanel() {
                 onClick={() => decodeFileRef.current?.click()}
               >
                 <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                <p className="text-xs text-muted-foreground">Upload a PNG stego image</p>
+                <p className="text-xs text-muted-foreground">上傳 PNG 隱寫圖片</p>
               </div>
             )}
           </div>
 
           {/* Optional AES key */}
           <div>
-            <label className="text-xs text-muted-foreground mb-1.5 block">AES Decryption Key (optional)</label>
+            <label className="text-xs text-muted-foreground mb-1.5 block">AES 解密金鑰（選填）</label>
             <input
               value={decodeKey}
               onChange={e => setDecodeKey(e.target.value)}
-              placeholder="Paste base64 AES key if message was encrypted..."
+              placeholder="若訊息已加密，請貼上 base64 AES 金鑰..."
               className="w-full px-3 py-2 rounded-lg bg-[oklch(0.14_0.015_265/0.5)] border border-border text-xs font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-[oklch(0.51_0.24_264/0.5)]"
             />
           </div>
@@ -409,9 +409,9 @@ export default function SteganographyPanel() {
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
             {isDecoding ? (
-              <><RefreshCw className="w-4 h-4 mr-2 animate-spin" />Extracting...</>
+              <><RefreshCw className="w-4 h-4 mr-2 animate-spin" />提取中...</>
             ) : (
-              <><Eye className="w-4 h-4 mr-2" />Extract Hidden Message</>
+              <><Eye className="w-4 h-4 mr-2" />提取隱藏訊息</>
             )}
           </Button>
 
@@ -435,7 +435,7 @@ export default function SteganographyPanel() {
                   <span className={`text-[10px] uppercase tracking-wider ${
                     decodedMessage.startsWith('[ENCRYPTED]') ? 'text-[oklch(0.75_0.18_75)]' : 'text-[oklch(0.7_0.17_162)]'
                   }`}>
-                    {decodedMessage.startsWith('[ENCRYPTED]') ? 'Encrypted Message' : 'Extracted Message'}
+                    {decodedMessage.startsWith('[ENCRYPTED]') ? '加密訊息' : '提取的訊息'}
                   </span>
                 </div>
                 <p className="text-sm text-foreground">{decodedMessage}</p>

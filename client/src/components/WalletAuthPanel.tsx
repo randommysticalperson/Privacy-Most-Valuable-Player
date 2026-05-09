@@ -30,10 +30,10 @@ export default function WalletAuthPanel() {
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
-    toast.success(`${label} copied to clipboard`);
+    toast.success(`${label} 已複製到剪貼簿`);
   };
 
-  const statusLabel = isConnecting ? 'Connecting...' : isConnected ? 'Connected' : 'Not Connected';
+  const statusLabel = isConnecting ? '連接中...' : isConnected ? '已連接' : '未連接';
   const statusColor = isConnecting
     ? 'text-[oklch(0.75_0.18_75)]'
     : isConnected
@@ -46,7 +46,7 @@ export default function WalletAuthPanel() {
     : 'border-[oklch(0.6_0.01_265/0.3)]';
 
   // Step indicators
-  const steps = ['Connect', 'Verify', 'DID', 'ZKP Identity'];
+  const steps = ['連接', '驗證', 'DID', 'ZKP 身份'];
   const stepDone = (i: number) =>
     (i === 0 && isConnected) ||
     (i === 1 && isConnected) ||
@@ -66,7 +66,7 @@ export default function WalletAuthPanel() {
           </div>
           <div>
             <h3 className="font-semibold text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              Wallet / DID Login
+              錢包 / DID 登入
             </h3>
             <p className="text-xs text-muted-foreground">MetaMask · EIP-1193 · DID:PKH</p>
           </div>
@@ -100,11 +100,11 @@ export default function WalletAuthPanel() {
         <div className="flex items-start gap-2 p-3 rounded-lg bg-[oklch(0.65_0.22_25/0.1)] border border-[oklch(0.65_0.22_25/0.3)]">
           <AlertCircle className="w-4 h-4 text-[oklch(0.65_0.22_25)] mt-0.5 shrink-0" />
           <p className="text-xs text-[oklch(0.65_0.22_25)]">
-            No wallet detected. Install{' '}
+            未偵測到錢包。請安裝{' '}
             <a href="https://metamask.io" target="_blank" rel="noopener noreferrer" className="underline">
               MetaMask
             </a>{' '}
-            to continue.
+            以繼續。
           </p>
         </div>
       )}
@@ -113,8 +113,8 @@ export default function WalletAuthPanel() {
       {!isConnected && !isConnecting && (
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground leading-relaxed">
-            No username or password required. Connect your Ethereum wallet to authenticate.
-            Your identity is derived from your key pair — no data is sent to any server.
+            無需使用者名稱或密碼。連接您的以太坊錢包即可登入。
+            您的身份由金鑰對衍生——不向任何伺服器傳送資料。
           </p>
           <Button
             onClick={connect}
@@ -122,10 +122,10 @@ export default function WalletAuthPanel() {
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
             <Wallet className="w-4 h-4 mr-2" />
-            Connect Wallet
+            連接錢包
           </Button>
           <p className="text-[10px] text-center text-muted-foreground">
-            Supports MetaMask, Brave Wallet, Coinbase Wallet, and any EIP-1193 provider
+            支援 MetaMask、Brave Wallet、Coinbase Wallet 及任何 EIP-1193 提供商
           </p>
         </div>
       )}
@@ -134,9 +134,9 @@ export default function WalletAuthPanel() {
       {isConnecting && (
         <div className="flex flex-col items-center gap-3 py-4">
           <Loader2 className="w-8 h-8 text-[oklch(0.75_0.18_75)] animate-spin" />
-          <p className="text-sm text-[oklch(0.75_0.18_75)]">Requesting wallet access…</p>
+          <p className="text-sm text-[oklch(0.75_0.18_75)]">正在請求錢包授權…</p>
           <p className="text-xs text-muted-foreground text-center max-w-xs">
-            Approve the connection request in your wallet extension.
+            請在您的錢包擴充套件中批准連接請求。
           </p>
         </div>
       )}
@@ -152,7 +152,7 @@ export default function WalletAuthPanel() {
             {/* Address */}
             <div className="p-3 rounded-lg bg-[oklch(0.7_0.17_162/0.08)] border border-[oklch(0.7_0.17_162/0.25)]">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Ethereum Address</span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">以太坊地址</span>
                 <CheckCircle2 className="w-3.5 h-3.5 text-[oklch(0.7_0.17_162)]" />
               </div>
               <div className="flex items-center gap-2">
@@ -171,7 +171,7 @@ export default function WalletAuthPanel() {
             {/* Alias */}
             <div className="p-3 rounded-lg bg-[oklch(0.75_0.18_75/0.08)] border border-[oklch(0.75_0.18_75/0.25)]">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Anonymous Alias</span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">匿名別名</span>
               </div>
               <code className="crypto-addr text-[oklch(0.85_0.005_265)]">{userInfo.alias}</code>
             </div>
@@ -179,7 +179,7 @@ export default function WalletAuthPanel() {
             {/* DID */}
             <div className="p-3 rounded-lg bg-[oklch(0.51_0.24_264/0.08)] border border-[oklch(0.51_0.24_264/0.25)]">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">W3C DID Identifier</span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">W3C DID 識別符</span>
                 <Shield className="w-3.5 h-3.5 text-[oklch(0.51_0.24_264)]" />
               </div>
               <div className="flex items-center gap-2">
@@ -199,7 +199,7 @@ export default function WalletAuthPanel() {
             {identityInfo && (
               <div className="p-3 rounded-lg bg-[oklch(0.75_0.18_75/0.08)] border border-[oklch(0.75_0.18_75/0.25)]">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Semaphore Commitment</span>
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Semaphore 承訾値</span>
                   <CheckCircle2 className="w-3.5 h-3.5 text-[oklch(0.75_0.18_75)]" />
                 </div>
                 <div className="flex items-center gap-2">
@@ -214,7 +214,7 @@ export default function WalletAuthPanel() {
                   </button>
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-1">
-                  Public commitment only — private key never exposed
+                  僅公開承訾値——私鑰永不暴露
                 </p>
               </div>
             )}
@@ -227,7 +227,7 @@ export default function WalletAuthPanel() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 hover:text-foreground transition-colors"
               >
-                View on Etherscan <ExternalLink className="w-3 h-3" />
+                在 Etherscan 查看 <ExternalLink className="w-3 h-3" />
               </a>
             </div>
 
@@ -238,7 +238,7 @@ export default function WalletAuthPanel() {
               className="w-full border-[oklch(0.65_0.22_25/0.3)] text-[oklch(0.65_0.22_25)] hover:bg-[oklch(0.65_0.22_25/0.1)]"
             >
               <LogOut className="w-3.5 h-3.5 mr-2" />
-              Disconnect
+              中斷連接
             </Button>
           </motion.div>
         )}

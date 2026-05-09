@@ -49,7 +49,7 @@ export default function IPFSStoragePanel() {
       setContent("");
       toast.success(`Uploaded to IPFS (demo) — CID: ${formatCID(result.cid)}`);
     } catch (err) {
-      toast.error('Upload failed: ' + (err instanceof Error ? err.message : 'Unknown'));
+      toast.error('上傳失敗：' + (err instanceof Error ? err.message : '未知錯誤'));
     } finally {
       setIsUploading(false);
     }
@@ -68,7 +68,7 @@ export default function IPFSStoragePanel() {
       setRetrieved(prev => ({ ...prev, [cid]: plaintext }));
       toast.success('Retrieved and decrypted from IPFS');
     } catch (err) {
-      toast.error('Retrieval failed: ' + (err instanceof Error ? err.message : 'Unknown'));
+      toast.error('取回失敗：' + (err instanceof Error ? err.message : '未知錯誤'));
     } finally {
       setRetrieving(null);
     }
@@ -82,7 +82,7 @@ export default function IPFSStoragePanel() {
       return copy;
     });
     keyStore.current.delete(cid);
-    toast.info('Removed from local view (IPFS data is immutable)');
+    toast.info('已從本地視圖移除（IPFS 資料不可變更）');
   };
 
   return (
@@ -95,9 +95,9 @@ export default function IPFSStoragePanel() {
           </div>
           <div>
             <h3 className="font-semibold text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              IPFS Decentralized Storage
+              IPFS 去中心化儲存
             </h3>
-            <p className="text-xs text-muted-foreground">Encrypt-then-Pin · Demo Mode</p>
+            <p className="text-xs text-muted-foreground">先加密再固定 · 示範模式</p>
           </div>
         </div>
         <Badge variant="outline" className="text-xs text-[oklch(0.75_0.18_75)] border-[oklch(0.75_0.18_75/0.4)]">
@@ -108,16 +108,16 @@ export default function IPFSStoragePanel() {
       {/* Privacy model explanation */}
       <div className="p-3 rounded-lg bg-[oklch(0.14_0.015_265/0.5)] border border-border text-xs text-muted-foreground space-y-1">
         <p className="text-foreground font-medium text-[11px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-          Privacy Model
+          隱私模型
         </p>
-        <p>① Encrypt in browser → ② Upload ciphertext to IPFS → ③ Store CID (not key) on server</p>
-        <p className="text-[oklch(0.65_0.22_25)]">⚠ Never store personal data directly on-chain — blockchain data is immutable and public.</p>
+        <p>① 在瀏覽器加密 → ② 將密文上傳到 IPFS → ③ 儲存 CID（非金鑰）到伺服器</p>
+        <p className="text-[oklch(0.65_0.22_25)]">⚠ 切勿直接將個人資料儲存到鏈上——區塊鏈資料不可變更且公開。</p>
       </div>
 
       {/* Upload form */}
       <div className="space-y-3">
         <div>
-          <label className="text-xs text-muted-foreground mb-1.5 block">File Name</label>
+          <label className="text-xs text-muted-foreground mb-1.5 block">檔案名稱</label>
           <Input
             value={name}
             onChange={e => setName(e.target.value)}
@@ -126,11 +126,11 @@ export default function IPFSStoragePanel() {
           />
         </div>
         <div>
-          <label className="text-xs text-muted-foreground mb-1.5 block">Content (will be encrypted)</label>
+          <label className="text-xs text-muted-foreground mb-1.5 block">內容（將會加密）</label>
           <Textarea
             value={content}
             onChange={e => setContent(e.target.value)}
-            placeholder="Enter private data..."
+            placeholder="輸入私密資料..."
             className="bg-[oklch(0.14_0.015_265/0.5)] border-border text-sm resize-none h-16"
             maxLength={500}
           />
@@ -142,9 +142,9 @@ export default function IPFSStoragePanel() {
           style={{ fontFamily: "'Space Grotesk', sans-serif" }}
         >
           {isUploading ? (
-            <><Upload className="w-4 h-4 mr-2 animate-bounce" />Encrypting & Uploading...</>
+            <><Upload className="w-4 h-4 mr-2 animate-bounce" />加密並上傳中...</>
           ) : (
-            <><Upload className="w-4 h-4 mr-2" />Encrypt & Pin to IPFS</>
+            <><Upload className="w-4 h-4 mr-2" />加密並固定到 IPFS</>
           )}
         </Button>
       </div>
@@ -158,7 +158,7 @@ export default function IPFSStoragePanel() {
             className="space-y-2"
           >
             <p className="text-xs text-muted-foreground uppercase tracking-wider">
-              Pinned Items ({items.length})
+              已固定項目（{items.length}）
             </p>
             {items.map(item => (
               <motion.div
@@ -188,7 +188,7 @@ export default function IPFSStoragePanel() {
                     {formatCID(item.cid, 10)}
                   </code>
                   <button
-                    onClick={() => navigator.clipboard.writeText(item.cid).then(() => toast.success('CID copied'))}
+                    onClick={() => navigator.clipboard.writeText(item.cid).then(() => toast.success('CID 已複製'))}
                     className="text-muted-foreground hover:text-foreground"
                   >
                     <Copy className="w-3 h-3" />
@@ -213,7 +213,7 @@ export default function IPFSStoragePanel() {
                     >
                       <div className="flex items-center gap-1 mb-1">
                         <CheckCircle2 className="w-3 h-3 text-[oklch(0.7_0.17_162)]" />
-                        <span className="text-[10px] text-[oklch(0.7_0.17_162)]">Decrypted content</span>
+                        <span className="text-[10px] text-[oklch(0.7_0.17_162)]">已解密內容</span>
                       </div>
                       <p className="text-xs text-foreground">{retrieved[item.cid]}</p>
                     </motion.div>
@@ -229,7 +229,7 @@ export default function IPFSStoragePanel() {
                     className="w-full h-7 text-xs border-border text-muted-foreground hover:text-foreground"
                   >
                     <Download className="w-3 h-3 mr-1.5" />
-                    {retrieving === item.cid ? 'Retrieving...' : 'Retrieve & Decrypt'}
+                    {retrieving === item.cid ? '取回中...' : '取回並解密'}
                   </Button>
                 )}
               </motion.div>
@@ -240,7 +240,7 @@ export default function IPFSStoragePanel() {
 
       {items.length === 0 && (
         <p className="text-xs text-muted-foreground text-center py-2">
-          No pinned items yet. Upload some encrypted data above.
+          尚無固定項目。請在上方上傳加密資料。
         </p>
       )}
     </div>

@@ -8,12 +8,12 @@ import { CATEGORY_LABELS, CATEGORY_COLORS, type ThreadCategory } from "@/lib/for
 const CATEGORIES: ThreadCategory[] = ["zero-knowledge","cryptography","identity","privacy-tech","decentralized","general"];
 
 const PRIVACY_TOOLS = [
-  { path: "/tools/encrypt", label: "E2E Encryption", icon: Lock },
-  { path: "/tools/stego",   label: "Steganography",  icon: Eye },
-  { path: "/tools/he",      label: "Homomorphic",    icon: Cpu },
-  { path: "/tools/ipfs",    label: "IPFS Storage",   icon: Database },
-  { path: "/tools/dp",      label: "Diff. Privacy",  icon: BarChart2 },
-  { path: "/tools/zkp",     label: "ZKP Proof",      icon: Zap },
+  { path: "/tools/encrypt", label: "E2E 加密", icon: Lock },
+  { path: "/tools/stego",   label: "隱寫術",  icon: Eye },
+  { path: "/tools/he",      label: "同態加密",    icon: Cpu },
+  { path: "/tools/ipfs",    label: "IPFS 儲存",   icon: Database },
+  { path: "/tools/dp",      label: "差分隱私",  icon: BarChart2 },
+  { path: "/tools/zkp",     label: "ZKP 證明",      icon: Zap },
 ];
 
 interface ForumSidebarProps {
@@ -41,22 +41,22 @@ export default function ForumSidebar({
           </span>
         </div>
         <p className="text-[9px] text-muted-foreground mt-0.5 leading-tight">
-          Anonymous · Encrypted · Decentralized
+          匿名 · 加密 · 去中心化
         </p>
       </div>
 
       {/* Top nav */}
       <div className="space-y-0.5 mb-3">
         {[
-          { label: "Forum", icon: Home, view: "forum" as const },
-          { label: "Trending", icon: TrendingUp, view: "forum" as const },
-          { label: "Members", icon: Users, view: "forum" as const },
+          { label: "論壇", icon: Home, view: "forum" as const },
+          { label: "熱門", icon: TrendingUp, view: "forum" as const },
+          { label: "成員", icon: Users, view: "forum" as const },
         ].map(item => (
           <button
             key={item.label}
             onClick={() => { onViewChange(item.view); onCategorySelect(null); }}
             className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors ${
-              activeView === "forum" && !activeCategory && item.label === "Forum"
+              activeView === "forum" && !activeCategory && item.label === "論壇"
                 ? "bg-[oklch(0.51_0.24_264/0.12)] text-[oklch(0.51_0.24_264)]"
                 : "text-muted-foreground hover:text-foreground hover:bg-[oklch(1_0_0/0.05)]"
             }`}
@@ -67,9 +67,9 @@ export default function ForumSidebar({
         ))}
       </div>
 
-      {/* Categories */}
+      {/* 分類 */}
       <div className="mb-3">
-        <p className="text-[9px] uppercase tracking-widest text-muted-foreground px-2 mb-1.5">Categories</p>
+        <p className="text-[9px] uppercase tracking-widest text-muted-foreground px-2 mb-1.5">分類</p>
         <div className="space-y-0.5">
           <button
             onClick={() => { onViewChange("forum"); onCategorySelect(null); }}
@@ -80,7 +80,7 @@ export default function ForumSidebar({
             }`}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
-            All Posts
+            全部討論
           </button>
           {CATEGORIES.map(cat => (
             <button
@@ -101,7 +101,7 @@ export default function ForumSidebar({
 
       {/* Privacy tools */}
       <div>
-        <p className="text-[9px] uppercase tracking-widest text-muted-foreground px-2 mb-1.5">Privacy Tools</p>
+        <p className="text-[9px] uppercase tracking-widest text-muted-foreground px-2 mb-1.5">隱私工具</p>
         <div className="space-y-0.5">
           {PRIVACY_TOOLS.map(tool => (
             <button
@@ -122,7 +122,7 @@ export default function ForumSidebar({
 
       <div className="mt-auto pt-3 px-2">
         <p className="text-[9px] text-muted-foreground leading-relaxed">
-          All posts E2E encrypted. Identity = ZKP nullifier.
+          所有帖子皆經端對端加密。身份 = ZKP 無效化符。
         </p>
       </div>
     </div>

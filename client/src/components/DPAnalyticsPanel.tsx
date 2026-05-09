@@ -1,5 +1,5 @@
 /**
- * DPAnalyticsPanel — Differential Privacy Analytics UI
+ * DPAnalyticsPanel — 差分隱私 Analytics UI
  * Design: Zero-Knowledge Glass — Dark Space Glassmorphism
  * Demonstrates: Laplace mechanism noise injection for page view statistics
  */
@@ -67,9 +67,9 @@ export default function DPAnalyticsPanel() {
           </div>
           <div>
             <h3 className="font-semibold text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              Differential Privacy
+              差分隱私
             </h3>
-            <p className="text-xs text-muted-foreground">Laplace Mechanism · Page View Analytics</p>
+            <p className="text-xs text-muted-foreground">Laplace 機制 · 頁面瀏覽分析</p>
           </div>
         </div>
         <Badge
@@ -84,11 +84,11 @@ export default function DPAnalyticsPanel() {
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <label className="text-xs text-muted-foreground">
-            Privacy Budget (ε = {epsilon.toFixed(1)})
+            隱私預算（ε = {epsilon.toFixed(1)}）
           </label>
           <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
             <Info className="w-3 h-3" />
-            <span>Lower ε = more private</span>
+            <span>ε 越小 = 隱私性越高</span>
           </div>
         </div>
         <Slider
@@ -100,16 +100,16 @@ export default function DPAnalyticsPanel() {
           className="w-full"
         />
         <div className="flex justify-between text-[10px] text-muted-foreground">
-          <span>0.1 (very private)</span>
-          <span>5.0 (low privacy)</span>
+          <span>0.1（極高隱私）</span>
+          <span>5.0（低隱私）</span>
         </div>
 
         {/* Noise magnitude info */}
         <div className="grid grid-cols-3 gap-2 text-center">
           {[
-            { label: 'Expected Noise', value: `±${noiseInfo.expectedAbsNoise.toFixed(1)}` },
-            { label: 'Std Deviation', value: noiseInfo.stddev.toFixed(1) },
-            { label: 'Scale (b)', value: (1 / epsilon).toFixed(2) },
+            { label: '預期噪音', value: `±${noiseInfo.expectedAbsNoise.toFixed(1)}` },
+            { label: '標準差', value: noiseInfo.stddev.toFixed(1) },
+            { label: '尺度（b）', value: (1 / epsilon).toFixed(2) },
           ].map(({ label, value }) => (
             <div key={label} className="p-2 rounded-lg bg-[oklch(0.14_0.015_265/0.5)] border border-border">
               <p className="text-[10px] text-muted-foreground">{label}</p>
@@ -122,7 +122,7 @@ export default function DPAnalyticsPanel() {
       {/* Privacy budget tracker */}
       <div className="p-3 rounded-lg bg-[oklch(0.14_0.015_265/0.5)] border border-border">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs text-muted-foreground">Privacy Budget Used</span>
+          <span className="text-xs text-muted-foreground">已使用隱私預算</span>
           <span className="text-xs font-mono">
             {budgetStatus.usedBudget.toFixed(1)} / {budgetStatus.totalBudget.toFixed(1)} ε
           </span>
@@ -138,7 +138,7 @@ export default function DPAnalyticsPanel() {
           />
         </div>
         <p className="text-[10px] text-muted-foreground mt-1">
-          {budgetStatus.queryCount} queries · {budgetStatus.remainingBudget.toFixed(1)} ε remaining
+          {budgetStatus.queryCount} 次查詢 · 剩餘 {budgetStatus.remainingBudget.toFixed(1)} ε
         </p>
       </div>
 
@@ -151,7 +151,7 @@ export default function DPAnalyticsPanel() {
           style={{ fontFamily: "'Space Grotesk', sans-serif" }}
         >
           <BarChart2 className="w-4 h-4 mr-2" />
-          Run DP Analytics (ε={epsilon.toFixed(1)})
+          執行差分隱私分析（ε={epsilon.toFixed(1)}）
         </Button>
         <Button
           variant="outline"
@@ -165,7 +165,7 @@ export default function DPAnalyticsPanel() {
 
       {!budgetTracker.canQuery(epsilon) && (
         <p className="text-xs text-[oklch(0.65_0.22_25)] text-center">
-          Privacy budget exhausted. Reset to continue.
+          隱私預算已耗盡。請重置後繼續。
         </p>
       )}
 
@@ -178,12 +178,12 @@ export default function DPAnalyticsPanel() {
             className="space-y-3"
           >
             <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">Page View Statistics</p>
+              <p className="text-xs text-muted-foreground">頁面瀏覽統計</p>
               <button
                 onClick={() => setShowRaw(v => !v)}
                 className="text-[10px] text-[oklch(0.51_0.24_264)] hover:underline"
               >
-                {showRaw ? 'Show DP values' : 'Compare with true values'}
+                {showRaw ? '顯示 DP 數字' : '與真實數字比較'}
               </button>
             </div>
 
@@ -211,7 +211,7 @@ export default function DPAnalyticsPanel() {
                     }}
                     formatter={(value: number, name: string) => [
                       value,
-                      name === 'dp' ? 'DP Count' : name === 'true' ? 'True Count' : 'Noise',
+                      name === 'dp' ? 'DP 計數' : name === 'true' ? '真實計數' : '噪音',
                     ]}
                   />
                   {showRaw && (
@@ -245,15 +245,15 @@ export default function DPAnalyticsPanel() {
                 );
               })}
               <div className="flex items-center justify-between text-[10px] px-1 pt-1 border-t border-border text-muted-foreground">
-                <span className="w-28">Page</span>
-                <span className="w-12 text-right">True</span>
+                <span className="w-28">頁面</span>
+                <span className="w-12 text-right">真實</span>
                 <span className="w-12 text-right text-[oklch(0.51_0.24_264)]">DP</span>
-                <span className="w-14 text-right">Noise</span>
+                <span className="w-14 text-right">噪音</span>
               </div>
             </div>
 
             <p className="text-[10px] text-muted-foreground">
-              Individual users cannot be identified from DP statistics. The noise prevents re-identification even with auxiliary data.
+              差分隱私統計無法識別個別使用者。噪音機制即使在輔助資料下也能防止重新識別。
             </p>
           </motion.div>
         )}

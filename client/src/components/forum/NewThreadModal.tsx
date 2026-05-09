@@ -32,10 +32,10 @@ export default function NewThreadModal({ open, onClose, onCreated }: NewThreadMo
   const [useZkp, setUseZkp] = useState(true);
   const [isPosting, setIsPosting] = useState(false);
 
-  const alias = userInfo?.alias ?? `anon-${Math.random().toString(16).slice(2, 8)}`;
+  const alias = userInfo?.alias ?? `匿名-${Math.random().toString(16).slice(2, 8)}`;
 
   const handleCreate = async () => {
-    if (!title.trim()) { toast.error("Title is required"); return; }
+    if (!title.trim()) { toast.error("請輸入標題"); return; }
     setIsPosting(true);
     try {
       const badges: PrivacyBadge[] = ["did-auth"];
@@ -46,7 +46,7 @@ export default function NewThreadModal({ open, onClose, onCreated }: NewThreadMo
         const key = await generateAESKey();
         await encryptData(content, key);
         const exportedKey = await exportAESKey(key);
-        toast.success("Thread encrypted. Save your key: " + exportedKey.slice(0, 16) + "...", { duration: 8000 });
+        toast.success("討論串已加密，請保存您的金鑰：" + exportedKey.slice(0, 16) + "...", { duration: 8000 });
       }
 
       const thread: ForumThread = {
@@ -65,7 +65,7 @@ export default function NewThreadModal({ open, onClose, onCreated }: NewThreadMo
       setTitle(""); setContent(""); setTags("");
       onClose();
     } catch {
-      toast.error("Failed to create thread");
+      toast.error("建立討論串失敗");
     } finally {
       setIsPosting(false);
     }
@@ -75,22 +75,22 @@ export default function NewThreadModal({ open, onClose, onCreated }: NewThreadMo
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
       <DialogContent className="bg-[oklch(0.1_0.01_265)] border-border max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-base" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Create New Thread</DialogTitle>
+          <DialogTitle className="text-base" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>建立新討論串</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-2">
           <div className="flex items-center gap-2 p-2.5 rounded-lg bg-[oklch(0.7_0.17_162/0.08)] border border-[oklch(0.7_0.17_162/0.2)]">
             <Shield className="w-3.5 h-3.5 text-[oklch(0.7_0.17_162)] shrink-0" />
             <div>
-              <p className="text-[10px] text-muted-foreground">Posting as</p>
+              <p className="text-[10px] text-muted-foreground">發文身份</p>
               <p className="text-xs font-mono text-foreground">{alias}</p>
             </div>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs text-muted-foreground">Thread Title *</label>
-            <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="What do you want to discuss?" className="bg-[oklch(0.14_0.015_265/0.5)] border-border text-sm" />
+            <label className="text-xs text-muted-foreground">標題 *</label>
+            <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="你想討論什麼？" className="bg-[oklch(0.14_0.015_265/0.5)] border-border text-sm" />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs text-muted-foreground">Category</label>
+            <label className="text-xs text-muted-foreground">分類</label>
             <Select value={category} onValueChange={v => setCategory(v as ThreadCategory)}>
               <SelectTrigger className="bg-[oklch(0.14_0.015_265/0.5)] border-border text-sm h-9"><SelectValue /></SelectTrigger>
               <SelectContent className="bg-[oklch(0.12_0.01_265)] border-border">
@@ -99,22 +99,22 @@ export default function NewThreadModal({ open, onClose, onCreated }: NewThreadMo
             </Select>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs text-muted-foreground">Opening Post (optional)</label>
-            <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Start the discussion..." className="bg-[oklch(0.14_0.015_265/0.5)] border-border text-sm resize-none h-24" />
+            <label className="text-xs text-muted-foreground">開筆內容（選填）</label>
+            <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder="開始討論..." className="bg-[oklch(0.14_0.015_265/0.5)] border-border text-sm resize-none h-24" />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs text-muted-foreground">Tags (comma-separated)</label>
-            <Input value={tags} onChange={e => setTags(e.target.value)} placeholder="zkp, identity, privacy" className="bg-[oklch(0.14_0.015_265/0.5)] border-border text-sm" />
+            <label className="text-xs text-muted-foreground">標籤（逗號分隔）</label>
+            <Input value={tags} onChange={e => setTags(e.target.value)} placeholder="zkp, 身份, 隱私" className="bg-[oklch(0.14_0.015_265/0.5)] border-border text-sm" />
           </div>
           <div className="space-y-2 p-3 rounded-lg bg-[oklch(1_0_0/0.03)] border border-border">
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Privacy Options</p>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">隱私選項</p>
             <label className="flex items-center gap-3 cursor-pointer">
               <div onClick={() => setUseEncryption(v => !v)} className={`w-8 h-4 rounded-full transition-all relative flex items-center shrink-0 ${useEncryption ? "bg-[oklch(0.7_0.17_162)]" : "bg-[oklch(1_0_0/0.1)]"}`}>
                 <span className={`absolute w-3 h-3 rounded-full bg-white transition-all ${useEncryption ? "left-[18px]" : "left-0.5"}`} />
               </div>
               <div>
-                <p className="text-xs text-foreground flex items-center gap-1"><Lock className="w-3 h-3 text-[oklch(0.7_0.17_162)]" />E2E Encryption (AES-GCM-256)</p>
-                <p className="text-[10px] text-muted-foreground">Server only stores ciphertext</p>
+                <p className="text-xs text-foreground flex items-center gap-1"><Lock className="w-3 h-3 text-[oklch(0.7_0.17_162)]" />端對端加密（AES-GCM-256）</p>
+                <p className="text-[10px] text-muted-foreground">伺服器僅儲存密文</p>
               </div>
             </label>
             <label className="flex items-center gap-3 cursor-pointer">
@@ -122,16 +122,16 @@ export default function NewThreadModal({ open, onClose, onCreated }: NewThreadMo
                 <span className={`absolute w-3 h-3 rounded-full bg-white transition-all ${useZkp ? "left-[18px]" : "left-0.5"}`} />
               </div>
               <div>
-                <p className="text-xs text-foreground flex items-center gap-1"><Zap className="w-3 h-3 text-[oklch(0.75_0.18_75)]" />ZKP Identity Badge (Semaphore)</p>
-                <p className="text-[10px] text-muted-foreground">Prove group membership without revealing identity</p>
+                <p className="text-xs text-foreground flex items-center gap-1"><Zap className="w-3 h-3 text-[oklch(0.75_0.18_75)]" />ZKP 身份徽章（Semaphore）</p>
+                <p className="text-[10px] text-muted-foreground">證明群組成員身份，不暴露真實身份</p>
               </div>
             </label>
           </div>
           <div className="flex items-center justify-end gap-2 pt-1">
-            <Button variant="ghost" size="sm" onClick={onClose} className="text-xs h-8">Cancel</Button>
+            <Button variant="ghost" size="sm" onClick={onClose} className="text-xs h-8">取消</Button>
             <Button onClick={handleCreate} disabled={!title.trim() || isPosting} size="sm" className="h-8 text-xs bg-[oklch(0.51_0.24_264)] hover:bg-[oklch(0.55_0.24_264)] text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
               {isPosting ? <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Send className="w-3.5 h-3.5 mr-1.5" />}
-              {isPosting ? "Creating..." : "Create Thread"}
+              {isPosting ? "建立中..." : "建立討論串"}
             </Button>
           </div>
         </div>

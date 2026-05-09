@@ -41,14 +41,14 @@ export default function ThreadList({ activeCategory, onThreadSelect, extraThread
               <Shield className="w-4 h-4 text-[oklch(0.51_0.24_264)]" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Welcome to ZeroForum</h2>
+              <h2 className="text-sm font-semibold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>歡迎來到 ZeroForum</h2>
               <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                An anonymous, privacy-first forum powered by{" "}
+                以匿名與隱私為核心的論壇，由{" "}
                 <span className="text-[oklch(0.75_0.18_75)] font-mono text-[10px]">MetaMask</span>,{" "}
                 <span className="text-[oklch(0.51_0.24_264)] font-mono text-[10px]">Semaphore ZKP</span>,{" "}
                 <span className="text-[oklch(0.7_0.17_162)] font-mono text-[10px]">WebCrypto E2E</span>, and{" "}
                 <span className="text-[oklch(0.51_0.24_264)] font-mono text-[10px]">IPFS</span>.
-                Connect your wallet to post — your identity is a ZKP nullifier, not a username.
+                連接錢包即可發文——你的身份是 ZKP 無效化符，而非使用者名稱。
               </p>
             </div>
           </div>
@@ -58,9 +58,9 @@ export default function ThreadList({ activeCategory, onThreadSelect, extraThread
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-sm font-semibold text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            {activeCategory ? CATEGORY_LABELS[activeCategory] : "All Threads"}
+            {activeCategory ? CATEGORY_LABELS[activeCategory] : "全部討論串"}
           </h2>
-          <p className="text-[10px] text-muted-foreground">{sorted.length} threads</p>
+          <p className="text-[10px] text-muted-foreground">{sorted.length} 個討論串</p>
         </div>
         <div className="flex items-center gap-1">
           {(["recent", "popular"] as const).map(s => (
@@ -73,14 +73,14 @@ export default function ThreadList({ activeCategory, onThreadSelect, extraThread
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {s === "recent" ? "Recent" : "Popular"}
+              {s === "recent" ? "最新" : "熱門"}
             </button>
           ))}
         </div>
       </div>
 
       {sorted.length === 0 ? (
-        <div className="py-12 text-center text-muted-foreground text-sm">No threads in this category yet.</div>
+        <div className="py-12 text-center text-muted-foreground text-sm">此分類尚無討論串。</div>
       ) : (
         <div className="space-y-2">
           {sorted.map(thread => (
