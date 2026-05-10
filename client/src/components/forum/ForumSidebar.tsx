@@ -3,7 +3,7 @@
  * i18n: all labels via useI18n()
  */
 
-import { Home, TrendingUp, Users, Lock, Eye, Cpu, Database, BarChart2, Zap, Shield } from "lucide-react";
+import { Home, TrendingUp, Users, Lock, Eye, Cpu, Database, BarChart2, Zap, Shield, FileText } from "lucide-react";
 import { CATEGORY_COLORS, type ThreadCategory } from "@/lib/forumStore";
 import { useI18n } from "@/contexts/I18nContext";
 
@@ -13,8 +13,8 @@ interface ForumSidebarProps {
   activeCategory: ThreadCategory | null;
   onCategorySelect: (cat: ThreadCategory | null) => void;
   onToolSelect: (tool: string) => void;
-  activeView: "forum" | "tools";
-  onViewChange: (v: "forum" | "tools") => void;
+  activeView: "forum" | "tools" | "contracts";
+  onViewChange: (v: "forum" | "tools" | "contracts") => void;
 }
 
 export default function ForumSidebar({
@@ -114,6 +114,21 @@ export default function ForumSidebar({
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Contract Registry link */}
+      <div className="mb-3">
+        <button
+          onClick={() => onViewChange("contracts")}
+          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors ${
+            activeView === "contracts"
+              ? "bg-[oklch(0.51_0.24_264/0.12)] text-[oklch(0.51_0.24_264)]"
+              : "text-muted-foreground hover:text-foreground hover:bg-[oklch(1_0_0/0.05)]"
+          }`}
+        >
+          <FileText className="w-3.5 h-3.5" />
+          {t("contractRegistry")}
+        </button>
       </div>
 
       {/* Privacy tools */}

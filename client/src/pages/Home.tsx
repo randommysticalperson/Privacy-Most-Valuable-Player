@@ -20,10 +20,11 @@ import DPAnalyticsPanel from "@/components/DPAnalyticsPanel";
 import SteganographyPanel from "@/components/SteganographyPanel";
 import HomomorphicPanel from "@/components/HomomorphicPanel";
 import { type ForumThread, type ForumPost, type ThreadCategory } from "@/lib/forumStore";
+import ContractRegistry from "@/pages/ContractRegistry";
 import { I18nProvider, useI18n } from "@/contexts/I18nContext";
 
 type ActiveTool = "wallet" | "zkp" | "encrypt" | "ipfs" | "dp" | "stego" | "he";
-type ActiveView = "forum" | "tools" | "wallet";
+type ActiveView = "forum" | "tools" | "wallet" | "contracts";
 
 function ForumApp() {
   const { t, lang } = useI18n();
@@ -111,9 +112,9 @@ function ForumApp() {
               setActiveView("forum");
             }}
             onToolSelect={handleToolSelect}
-            activeView={activeView === "wallet" ? "tools" : activeView}
+            activeView={activeView === "wallet" ? "tools" : activeView as "forum" | "tools" | "contracts"}
             onViewChange={v => {
-              setActiveView(v);
+              setActiveView(v as ActiveView);
               if (v === "forum") setSelectedThread(null);
             }}
           />
@@ -164,6 +165,11 @@ function ForumApp() {
               </div>
               {activeTool === "wallet" ? <WalletAuthPanel /> : renderToolPanel()}
             </div>
+          )}
+
+          {/* CONTRACTS VIEW */}
+          {activeView === "contracts" && (
+            <ContractRegistry onBack={() => setActiveView("forum")} />
           )}
 
           {/* WALLET VIEW — mobile only */}
