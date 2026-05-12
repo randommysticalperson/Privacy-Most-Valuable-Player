@@ -8,12 +8,13 @@
  * absence of vulnerabilities. Always verify from official protocol documentation.
  */
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { useI18n } from "@/contexts/I18nContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import EtherscanLookupPanel from "@/components/EtherscanLookup";
 import {
   Search,
   ExternalLink,
@@ -29,7 +30,6 @@ import {
   Github,
   Filter,
   ArrowLeft,
-  RefreshCw,
   CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -46,36 +46,6 @@ import {
   type ContractCategory,
   type ComplianceTag,
 } from "@/lib/contractRegistry";
-
-// ─── Etherscan lookup ─────────────────────────────────────────────────────────
-
-async function lookupEtherscan(address: string): Promise<{
-  isContract: boolean;
-  isVerified: boolean;
-  contractName?: string;
-  compilerVersion?: string;
-  txCount?: number;
-} | null> {
-  // Use Etherscan public API (no key needed for basic contract check)
-  try {
-    const res = await fetch(
-      `https://api.etherscan.io/api?module=contract&action=getsourcecode&address=${address}&apikey=YourApiKeyToken`
-    );
-    const data = await res.json();
-    if (data.status === "1" && data.result?.[0]) {
-      const r = data.result[0];
-      return {
-        isContract: true,
-        isVerified: r.SourceCode !== "",
-        contractName: r.ContractName || undefined,
-        compilerVersion: r.CompilerVersion || undefined,
-      };
-    }
-    return { isContract: false, isVerified: false };
-  } catch {
-    return null;
-  }
-}
 
 // ─── Risk icon ────────────────────────────────────────────────────────────────
 
@@ -324,117 +294,6 @@ function ContractCard({ contract }: { contract: ContractEntry }) {
   );
 }
 
-// ─── Etherscan Lookup Panel ───────────────────────────────────────────────────
-
-function EtherscanLookup() {
-  const { lang } = useI18n();
-  const [address, setAddress] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<Awaited<ReturnType<typeof lookupEtherscan>> | null>(null);
-  const [searched, setSearched] = useState(false);
-
-  const handleLookup = useCallback(async () => {
-    if (!address.match(/^0x[0-9a-fA-F]{40}$/)) {
-      toast.error(lang === "zh" ? "請輸入有效的以太坊地址（0x...）" : "Enter a valid Ethereum address (0x...)");
-      return;
-    }
-    setLoading(true);
-    setResult(null);
-    setSearched(false);
-    const r = await lookupEtherscan(address);
-    setResult(r);
-    setSearched(true);
-    setLoading(false);
-  }, [address, lang]);
-
-  return (
-    <div className="glass-panel p-5 space-y-4">
-      <div className="flex items-center gap-2">
-        <Search className="w-4 h-4 text-[oklch(0.51_0.24_264)]" />
-        <h3
-          className="font-semibold text-sm"
-          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-        >
-          {lang === "zh" ? "Etherscan 合約查詢" : "Etherscan Contract Lookup"}
-        </h3>
-      </div>
-      <p className="text-xs text-muted-foreground">
-        {lang === "zh"
-          ? "輸入任意以太坊地址，查詢是否為已開源驗證的合約。"
-          : "Enter any Ethereum address to check if it is a source-verified contract on Etherscan."}
-      </p>
-      <div className="flex gap-2">
-        <Input
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          placeholder="0x..."
-          className="bg-[oklch(0.14_0.015_265/0.5)] border-border text-xs font-mono flex-1"
-          onKeyDown={(e) => e.key === "Enter" && handleLookup()}
-        />
-        <Button
-          onClick={handleLookup}
-          disabled={loading || !address}
-          size="sm"
-          className="bg-[oklch(0.51_0.24_264)] hover:bg-[oklch(0.55_0.24_264)] text-white shrink-0"
-        >
-          {loading ? (
-            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <Search className="w-3.5 h-3.5" />
-          )}
-        </Button>
-      </div>
-
-      <AnimatePresence>
-        {searched && result && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`p-3 rounded-lg border space-y-2 ${
-              result.isVerified
-                ? "bg-[oklch(0.7_0.17_162/0.06)] border-[oklch(0.7_0.17_162/0.3)]"
-                : "bg-[oklch(0.75_0.18_75/0.06)] border-[oklch(0.75_0.18_75/0.3)]"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              {result.isVerified ? (
-                <CheckCircle2 className="w-4 h-4 text-[oklch(0.7_0.17_162)]" />
-              ) : (
-                <AlertTriangle className="w-4 h-4 text-[oklch(0.75_0.18_75)]" />
-              )}
-              <span className="text-xs font-medium text-foreground">
-                {result.isVerified
-                  ? lang === "zh" ? "✓ 已開源驗證合約" : "✓ Source-verified contract"
-                  : result.isContract
-                  ? lang === "zh" ? "⚠ 合約未開源驗證" : "⚠ Contract not source-verified"
-                  : lang === "zh" ? "⚠ 非合約地址或查詢失敗" : "⚠ Not a contract or lookup failed"}
-              </span>
-            </div>
-            {result.contractName && (
-              <p className="text-[10px] text-muted-foreground">
-                {lang === "zh" ? "合約名稱" : "Contract"}: <span className="text-foreground">{result.contractName}</span>
-              </p>
-            )}
-            {result.compilerVersion && (
-              <p className="text-[10px] text-muted-foreground">
-                {lang === "zh" ? "編譯器" : "Compiler"}: <span className="text-foreground font-mono">{result.compilerVersion}</span>
-              </p>
-            )}
-            <a
-              href={`https://etherscan.io/address/${address}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-[10px] text-[oklch(0.51_0.24_264)] hover:underline"
-            >
-              {lang === "zh" ? "在 Etherscan 查看" : "View on Etherscan"} <ExternalLink className="w-2.5 h-2.5" />
-            </a>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 interface ContractRegistryProps {
@@ -665,7 +524,9 @@ export default function ContractRegistry({ onBack }: ContractRegistryProps) {
 
           {/* Sidebar */}
           <div className="space-y-4">
-            <EtherscanLookup />
+            <div className="glass-panel p-4">
+              <EtherscanLookupPanel />
+            </div>
 
             {/* Stats */}
             <div className="glass-panel p-4 space-y-3">

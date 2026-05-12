@@ -13,8 +13,8 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { WalletProvider } from "./contexts/WalletContext";
 import { SemaphoreProvider } from "./contexts/SemaphoreContext";
 import Home from "./pages/Home";
-
 function Router() {
+  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path={"/"} component={Home} />

@@ -156,7 +156,7 @@ export async function deriveKeyFromPassphrase(
   const key = await crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      salt: saltBytes,
+      salt: saltBytes.buffer as ArrayBuffer,
       iterations: 100000,
       hash: 'SHA-256',
     },
