@@ -33,8 +33,12 @@ import {
   AlertTriangle,
   CheckCircle2,
   Info,
+  Key,
+  Settings,
 } from "lucide-react";
 import { toast } from "sonner";
+
+const LS_API_KEY = "etherscan_api_key";
 
 // Validate Ethereum address
 function isValidAddress(addr: string): boolean {
@@ -56,18 +60,34 @@ interface ABIItem {
   stateMutability?: string;
 }
 
-export default function EtherscanLookup() {
-  const { t } = useI18n();
-  const [inputAddress, setInputAddress] = useState("");
-  const [queryAddress, setQueryAddress] = useState<string | null>(null);
+interface EtherscanLookupProps {
+  /** Pre-fill address from outside (e.g. ContractCard one-click lookup) */
+  initialAddress?: string;
+}
+
+export default function EtherscanLookup({ initialAddress }: EtherscanLookupProps = {}) {
+  const { t, lang } = useI18n();
+  const [inputAddress, setInputAddress] = useState(initialAddress ?? "");
+  const [queryAddress, setQueryAddress] = useState<string | null>(initialAddress && /^0x[0-9a-fA-F]{40}$/.test(initialAddress) ? initialAddress : null);
   const [network, setNetwork] = useState<Network>("mainnet");
   const [showABI, setShowABI] = useState(false);
   const [showSource, setShowSource] = useState(false);
   const [showTxs, setShowTxs] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [apiKeyInput, setApiKeyInput] = useState(() => localStorage.getItem(LS_API_KEY) ?? "");
+  const [savedApiKey, setSavedApiKey] = useState(() => localStorage.getItem(LS_API_KEY) ?? "");
+
+  const saveApiKey = useCallback(() => {
+    const trimmed = apiKeyInput.trim();
+    localStorage.setItem(LS_API_KEY, trimmed);
+    setSavedApiKey(trimmed);
+    toast.success(lang === "zh" ? "API 金鑰已儲存" : "API key saved");
+    setShowApiKey(false);
+  }, [apiKeyInput, lang]);
 
   // tRPC query — only fires when queryAddress is set
   const contractQuery = trpc.etherscan.lookupContract.useQuery(
-    { address: queryAddress!, network },
+    { address: queryAddress!, network, apiKey: savedApiKey || undefined },
     {
       enabled: !!queryAddress,
       retry: false,
@@ -76,7 +96,7 @@ export default function EtherscanLookup() {
   );
 
   const txQuery = trpc.etherscan.getTransactions.useQuery(
-    { address: queryAddress!, network, limit: 10 },
+    { address: queryAddress!, network, limit: 10, apiKey: savedApiKey || undefined },
     {
       enabled: !!queryAddress && showTxs,
       retry: false,
@@ -108,15 +128,89 @@ export default function EtherscanLookup() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center gap-2 mb-1">
-        <Search className="w-4 h-4 text-[oklch(0.51_0.24_264)]" />
-        <h3
-          className="text-sm font-semibold text-foreground"
-          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+      <div className="flex items-center justify-between gap-2 mb-1">
+        <div className="flex items-center gap-2">
+          <Search className="w-4 h-4 text-[oklch(0.51_0.24_264)]" />
+          <h3
+            className="text-sm font-semibold text-foreground"
+            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+          >
+            {t("etherscanTitle")}
+          </h3>
+          {savedApiKey && (
+            <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/20 text-[9px] gap-1">
+              <Key className="w-2.5 h-2.5" />
+              API Key
+            </Badge>
+          )}
+        </div>
+        <button
+          onClick={() => setShowApiKey(v => !v)}
+          className="p-1.5 rounded-lg hover:bg-[oklch(1_0_0/0.06)] text-muted-foreground hover:text-foreground transition-colors"
+          title={lang === "zh" ? "設定 API 金鑰" : "Set API Key"}
         >
-          {t("etherscanTitle")}
-        </h3>
+          <Settings className="w-3.5 h-3.5" />
+        </button>
       </div>
+
+      {/* API Key settings panel */}
+      <AnimatePresence>
+        {showApiKey && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="p-3 rounded-xl bg-[oklch(0.12_0.01_265/0.6)] border border-[oklch(0.51_0.24_264/0.2)] space-y-2.5">
+              <div className="flex items-center gap-1.5">
+                <Key className="w-3 h-3 text-[oklch(0.51_0.24_264)]" />
+                <span className="text-[11px] font-medium text-foreground">
+                  {lang === "zh" ? "Etherscan API 金鑰（選填）" : "Etherscan API Key (optional)"}
+                </span>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                {lang === "zh"
+                  ? "提供金鑰可提升查詢速率。可至 etherscan.io/myapikey 免費申請。金鑰僅儲存於瀏覽器本地。"
+                  : "Providing a key increases rate limits. Get one free at etherscan.io/myapikey. Key is stored locally in your browser only."}
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  value={apiKeyInput}
+                  onChange={e => setApiKeyInput(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && saveApiKey()}
+                  placeholder={lang === "zh" ? "貼上您的 API 金鑰..." : "Paste your API key..."}
+                  type="password"
+                  className="flex-1 bg-[oklch(0.09_0.01_265/0.8)] border-border text-foreground text-xs font-mono"
+                />
+                <Button
+                  onClick={saveApiKey}
+                  size="sm"
+                  className="bg-[oklch(0.51_0.24_264)] hover:bg-[oklch(0.45_0.24_264)] text-white shrink-0 text-xs"
+                >
+                  {lang === "zh" ? "儲存" : "Save"}
+                </Button>
+                {savedApiKey && (
+                  <Button
+                    onClick={() => {
+                      localStorage.removeItem(LS_API_KEY);
+                      setSavedApiKey("");
+                      setApiKeyInput("");
+                      toast.success(lang === "zh" ? "API 金鑰已移除" : "API key removed");
+                      setShowApiKey(false);
+                    }}
+                    size="sm"
+                    variant="outline"
+                    className="border-red-500/30 text-red-400 hover:bg-red-500/10 shrink-0 text-xs"
+                  >
+                    {lang === "zh" ? "移除" : "Remove"}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Network selector + address input */}
       <div className="flex gap-2">

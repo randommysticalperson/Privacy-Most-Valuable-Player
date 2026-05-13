@@ -8,13 +8,15 @@
  * absence of vulnerabilities. Always verify from official protocol documentation.
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
+import { trpc } from "@/lib/trpc";
 import { useI18n } from "@/contexts/I18nContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import EtherscanLookupPanel from "@/components/EtherscanLookup";
+import ReportModal from "@/components/ReportModal";
 import {
   Search,
   ExternalLink,
@@ -31,6 +33,7 @@ import {
   Filter,
   ArrowLeft,
   CheckCircle2,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -60,12 +63,21 @@ function RiskIcon({ level, size = 16 }: { level: RiskLevel; size?: number }) {
   return <ShieldX style={s} className="text-[oklch(0.65_0.25_20)]" />;
 }
 
-// ─── Contract Card ────────────────────────────────────────────────────────────
+// ─── Contract Card ────────────────────────────────────────────────────────────────
 
-function ContractCard({ contract }: { contract: ContractEntry }) {
+function ContractCard({ contract, onLookup }: { contract: ContractEntry; onLookup?: (address: string) => void }) {
   const { lang } = useI18n();
   const [expanded, setExpanded] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const risk = RISK_CONFIG[contract.riskLevel];
+
+  // Fetch report count for this contract (only for real addresses)
+  const isRealAddress = contract.address !== "0x0000000000000000000000000000000000000000";
+  const countQuery = trpc.reports.count.useQuery(
+    { contractAddress: contract.address },
+    { enabled: isRealAddress, staleTime: 30_000 }
+  );
+  const reportCount = countQuery.data?.count ?? 0;
 
   const copyAddress = () => {
     navigator.clipboard.writeText(contract.address);
@@ -143,14 +155,24 @@ function ContractCard({ contract }: { contract: ContractEntry }) {
           <code className="crypto-addr text-[10px] text-muted-foreground flex-1 truncate">
             {contract.address}
           </code>
-          <button onClick={copyAddress} className="shrink-0 hover:text-foreground text-muted-foreground">
+          <button onClick={copyAddress} className="shrink-0 hover:text-foreground text-muted-foreground" title={lang === "zh" ? "複製地址" : "Copy address"}>
             <Copy className="w-3 h-3" />
           </button>
+          {onLookup && (
+            <button
+              onClick={() => onLookup(contract.address)}
+              className="shrink-0 hover:text-[oklch(0.51_0.24_264)] text-muted-foreground transition-colors"
+              title={lang === "zh" ? "即時查詢" : "Live Lookup"}
+            >
+              <Zap className="w-3 h-3" />
+            </button>
+          )}
           <a
             href={contract.etherscanUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="shrink-0 hover:text-[oklch(0.51_0.24_264)] text-muted-foreground"
+            title="Etherscan"
           >
             <ExternalLink className="w-3 h-3" />
           </a>
@@ -195,16 +217,49 @@ function ContractCard({ contract }: { contract: ContractEntry }) {
         </div>
       )}
 
-      {/* Expand toggle */}
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors w-full"
-      >
-        {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-        {lang === "zh"
-          ? `${contract.audits.length} 份審計報告 · ${totalFindings} 項發現`
-          : `${contract.audits.length} audit report${contract.audits.length !== 1 ? "s" : ""} · ${totalFindings} findings`}
-      </button>
+      {/* Footer row: expand toggle + report button */}
+      <div className="flex items-center justify-between gap-2">
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors flex-1"
+        >
+          {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          {lang === "zh"
+            ? `${contract.audits.length} 份審計報告 · ${totalFindings} 項發現`
+            : `${contract.audits.length} audit report${contract.audits.length !== 1 ? "s" : ""} · ${totalFindings} findings`}
+        </button>
+
+        {isRealAddress && (
+          <button
+            onClick={() => setShowReport(true)}
+            className="flex items-center gap-1 text-[10px] text-red-400/70 hover:text-red-400 transition-colors shrink-0 px-2 py-1 rounded-lg hover:bg-red-500/10 border border-transparent hover:border-red-500/20"
+            title={lang === "zh" ? "匿名舉報漏洞" : "Report vulnerability anonymously"}
+          >
+            <ShieldAlert className="w-3 h-3" />
+            {lang === "zh" ? "匿名舉報" : "Report"}
+            {reportCount > 0 && (
+              <span className="ml-0.5 px-1 py-0 rounded-full bg-red-500/20 text-red-400 text-[9px] font-medium">
+                {reportCount}
+              </span>
+            )}
+          </button>
+        )}
+      </div>
+
+      {/* Report Modal */}
+      <AnimatePresence>
+        {showReport && (
+          <ReportModal
+            contractAddress={contract.address}
+            contractName={contract.name}
+            onClose={() => setShowReport(false)}
+            onSubmitted={() => {
+              setShowReport(false);
+              countQuery.refetch();
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Expanded audit records */}
       <AnimatePresence>
@@ -307,6 +362,16 @@ export default function ContractRegistry({ onBack }: ContractRegistryProps) {
   const [riskFilter, setRiskFilter] = useState<RiskLevel | "All">("All");
   const [complianceFilter, setComplianceFilter] = useState<ComplianceTag | "All">("All");
   const [showFilters, setShowFilters] = useState(false);
+  const [lookupAddress, setLookupAddress] = useState<string | undefined>(undefined);
+  const lookupPanelRef = useRef<HTMLDivElement>(null);
+
+  const handleCardLookup = (address: string) => {
+    setLookupAddress(address);
+    // Scroll to the lookup panel
+    setTimeout(() => {
+      lookupPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  };
 
   const filtered = useMemo(
     () => filterContracts(CONTRACT_REGISTRY, query, categoryFilter, riskFilter, complianceFilter),
@@ -516,7 +581,7 @@ export default function ContractRegistry({ onBack }: ContractRegistryProps) {
                 </motion.div>
               ) : (
                 filtered.map((contract) => (
-                  <ContractCard key={contract.id} contract={contract} />
+                  <ContractCard key={contract.id} contract={contract} onLookup={handleCardLookup} />
                 ))
               )}
             </AnimatePresence>
@@ -524,8 +589,11 @@ export default function ContractRegistry({ onBack }: ContractRegistryProps) {
 
           {/* Sidebar */}
           <div className="space-y-4">
-            <div className="glass-panel p-4">
-              <EtherscanLookupPanel />
+            <div className="glass-panel p-4" ref={lookupPanelRef}>
+              <EtherscanLookupPanel
+                key={lookupAddress}
+                initialAddress={lookupAddress}
+              />
             </div>
 
             {/* Stats */}

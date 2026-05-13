@@ -69,27 +69,31 @@ export const etherscanRouter = router({
       z.object({
         address: ethAddressSchema,
         network: z.enum(["mainnet", "sepolia"]).default("mainnet"),
+        apiKey: z.string().optional(),
       })
     )
     .query(async ({ input }) => {
-      const { address, network } = input;
+      const { address, network, apiKey } = input;
 
       // Run all queries in parallel for speed
       const [sourceResult, balanceResult, txCountResult] = await Promise.allSettled([
         // Source code + ABI + verification status (module=contract, action=getsourcecode)
         etherscanFetch(
           { module: "contract", action: "getsourcecode", address },
-          network
+          network,
+          apiKey
         ),
         // ETH balance
         etherscanFetch(
           { module: "account", action: "balance", address, tag: "latest" },
-          network
+          network,
+          apiKey
         ),
         // Transaction count
         etherscanFetch(
           { module: "account", action: "txlist", address, startblock: "0", endblock: "99999999", page: "1", offset: "1", sort: "desc" },
-          network
+          network,
+          apiKey
         ),
       ]);
 
@@ -195,10 +199,11 @@ export const etherscanRouter = router({
         address: ethAddressSchema,
         network: z.enum(["mainnet", "sepolia"]).default("mainnet"),
         limit: z.number().int().min(1).max(25).default(10),
+        apiKey: z.string().optional(),
       })
     )
     .query(async ({ input }) => {
-      const { address, network, limit } = input;
+      const { address, network, limit, apiKey } = input;
 
       const result = await etherscanFetch(
         {
@@ -211,7 +216,8 @@ export const etherscanRouter = router({
           offset: String(limit),
           sort: "desc",
         },
-        network
+        network,
+        apiKey
       );
 
       type TxItem = {

@@ -60,3 +60,31 @@
 - [x] Project upgraded to web-db-user (tRPC + Express backend + MySQL)
 - [x] TypeScript zero errors (node_modules/.bin/tsc --noEmit)
 - [x] ETHERSCAN_API_KEY env var supported (optional, rate-limited without key)
+
+## Session 5 — Three Feature Additions
+
+### 1. Etherscan API Key
+- [x] User-provided API key input in EtherscanLookup panel (localStorage persistence)
+- [x] Settings gear icon toggles collapsible API key panel
+- [x] "API Key" badge shown in header when key is active
+- [x] apiKey passed to both lookupContract and getTransactions tRPC procedures
+- [x] Backend etherscan router accepts optional apiKey in both procedure inputs
+
+### 2. Contract Card One-Click Lookup
+- [x] Add ⚡ (Zap) icon button to each ContractCard address row
+- [x] Lift lookupAddress state to ContractRegistry parent
+- [x] Auto-scroll to EtherscanLookup panel on click (smooth scroll)
+- [x] Pass initialAddress prop to EtherscanLookupPanel (key prop forces re-mount)
+
+### 3. ZKP Anonymous Vulnerability Report
+- [x] DB schema: vulnerability_reports table (9 columns: id, contractAddress, category, description, severity, nullifier, merkleTreeRoot, proofScope, createdAt)
+- [x] DB migration applied (pnpm db:push)
+- [x] Backend tRPC: submit procedure (nullifier uniqueness check, insert report)
+- [x] Backend tRPC: list procedure (list reports for a contract, 50 max)
+- [x] Backend tRPC: count procedure (lightweight badge count)
+- [x] reportsRouter registered in server/routers.ts
+- [x] Frontend: ReportModal component (category selector, severity selector, description, ZKP proof generation + auto-submit)
+- [x] Frontend: 匿名舉報 / Report button in ContractCard footer
+- [x] Frontend: Report count badge on Report button
+- [x] Frontend: Modal auto-submits after Semaphore proof is verified
+- [x] Vitest: 6 input validation tests in server/reports.test.ts (all passing)

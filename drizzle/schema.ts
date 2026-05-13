@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, bigint } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -26,3 +26,24 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
 // TODO: Add your tables here
+
+/**
+ * Vulnerability reports submitted anonymously via Semaphore ZKP.
+ * The nullifier ensures one report per identity per contract (prevents spam).
+ * No user identity is stored — only the ZKP nullifier and public proof data.
+ */
+export const vulnerabilityReports = mysqlTable("vulnerability_reports", {
+  id: int("id").autoincrement().primaryKey(),
+  contractAddress: varchar("contractAddress", { length: 42 }).notNull(),
+  category: mysqlEnum("category", ["reentrancy", "overflow", "access-control", "oracle", "logic", "other"]).notNull(),
+  description: text("description").notNull(),
+  severity: mysqlEnum("severity", ["low", "medium", "high", "critical"]).notNull().default("medium"),
+  // ZKP proof fields — nullifier prevents double-reporting per identity per contract
+  nullifier: varchar("nullifier", { length: 128 }).notNull().unique(),
+  merkleTreeRoot: varchar("merkleTreeRoot", { length: 128 }).notNull(),
+  proofScope: varchar("proofScope", { length: 128 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type VulnerabilityReport = typeof vulnerabilityReports.$inferSelect;
+export type InsertVulnerabilityReport = typeof vulnerabilityReports.$inferInsert;
