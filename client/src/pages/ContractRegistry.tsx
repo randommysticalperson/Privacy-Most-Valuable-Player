@@ -79,6 +79,12 @@ function ContractCard({ contract, onLookup }: { contract: ContractEntry; onLooku
   );
   const reportCount = countQuery.data?.count ?? 0;
 
+  // Fetch full report list — only when the card is expanded
+  const reportsQuery = trpc.reports.list.useQuery(
+    { contractAddress: contract.address },
+    { enabled: isRealAddress && expanded, staleTime: 30_000 }
+  );
+
   const copyAddress = () => {
     navigator.clipboard.writeText(contract.address);
     toast.success(lang === "zh" ? "地址已複製" : "Address copied");
@@ -318,6 +324,122 @@ function ContractCard({ contract, onLookup }: { contract: ContractEntry; onLooku
                 </div>
               </div>
             ))}
+
+            {/* Anonymous vulnerability reports */}
+            {isRealAddress && (
+              <div className="pt-1 space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <ShieldAlert className="w-3 h-3 text-red-400/70" />
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {lang === "zh" ? "匿名漏洞舉報" : "Anonymous Vulnerability Reports"}
+                    {reportCount > 0 && (
+                      <span className="ml-1.5 px-1.5 py-0 rounded-full bg-red-500/20 text-red-400 normal-case tracking-normal">
+                        {reportCount}
+                      </span>
+                    )}
+                  </span>
+                </div>
+
+                {/* Loading state */}
+                {reportsQuery.isLoading && (
+                  <div className="flex items-center gap-2 py-2 text-[10px] text-muted-foreground">
+                    <div className="w-3 h-3 border border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
+                    {lang === "zh" ? "載入舉報中..." : "Loading reports..."}
+                  </div>
+                )}
+
+                {/* Error state */}
+                {reportsQuery.isError && (
+                  <div className="flex items-center gap-2 py-2.5 px-3 rounded-lg bg-red-500/8 border border-red-500/15 text-[10px] text-red-400/80">
+                    <AlertTriangle className="w-3 h-3 shrink-0" />
+                    <span>
+                      {lang === "zh" ? "載入舉報失敗，請" : "Failed to load reports. "}
+                    </span>
+                    <button
+                      onClick={() => reportsQuery.refetch()}
+                      className="underline hover:text-red-400 transition-colors"
+                    >
+                      {lang === "zh" ? "重試" : "Retry"}
+                    </button>
+                  </div>
+                )}
+
+                {/* Empty state */}
+                {!reportsQuery.isLoading && !reportsQuery.isError && reportsQuery.data && reportsQuery.data.length === 0 && (
+                  <div className="py-3 text-center text-[10px] text-muted-foreground/60 border border-dashed border-border rounded-lg">
+                    {lang === "zh" ? "目前尚無匿名舉報" : "No anonymous reports yet"}
+                  </div>
+                )}
+
+                {/* Report rows */}
+                {reportsQuery.data && reportsQuery.data.length > 0 && (
+                  <div className="space-y-1.5">
+                    {reportsQuery.data.map((report) => {
+                      const SEVERITY_STYLES: Record<string, { color: string; bg: string }> = {
+                        low:      { color: "text-blue-400",   bg: "bg-blue-500/15 border-blue-500/25" },
+                        medium:   { color: "text-amber-400",  bg: "bg-amber-500/15 border-amber-500/25" },
+                        high:     { color: "text-orange-400", bg: "bg-orange-500/15 border-orange-500/25" },
+                        critical: { color: "text-red-400",    bg: "bg-red-500/15 border-red-500/25" },
+                      };
+                      const CATEGORY_LABELS: Record<string, { zh: string; en: string }> = {
+                        reentrancy:       { zh: "重入攻擊",   en: "Reentrancy" },
+                        overflow:         { zh: "整數溢位",   en: "Overflow" },
+                        "access-control": { zh: "存取控制",   en: "Access Control" },
+                        oracle:           { zh: "預言機操縱", en: "Oracle" },
+                        logic:            { zh: "邏輯錯誤",   en: "Logic Error" },
+                        other:            { zh: "其他",       en: "Other" },
+                      };
+                      const SEVERITY_LABELS: Record<string, { zh: string; en: string }> = {
+                        low:      { zh: "低",   en: "Low" },
+                        medium:   { zh: "中",   en: "Med" },
+                        high:     { zh: "高",   en: "High" },
+                        critical: { zh: "嚴重", en: "Crit" },
+                      };
+                      const sev = SEVERITY_STYLES[report.severity] ?? SEVERITY_STYLES.medium;
+                      const catLabel = CATEGORY_LABELS[report.category]?.[lang] ?? report.category;
+                      const sevLabel = SEVERITY_LABELS[report.severity]?.[lang] ?? report.severity;
+                      const relativeTime = (() => {
+                        const diff = Date.now() - new Date(report.createdAt).getTime();
+                        const mins = Math.floor(diff / 60_000);
+                        if (mins < 1) return lang === "zh" ? "剛剛" : "just now";
+                        if (mins < 60) return lang === "zh" ? `${mins} 分鐘前` : `${mins}m ago`;
+                        const hrs = Math.floor(mins / 60);
+                        if (hrs < 24) return lang === "zh" ? `${hrs} 小時前` : `${hrs}h ago`;
+                        const days = Math.floor(hrs / 24);
+                        return lang === "zh" ? `${days} 天前` : `${days}d ago`;
+                      })();
+
+                      return (
+                        <div
+                          key={report.id}
+                          className="p-2.5 rounded-lg bg-[oklch(0.12_0.01_265/0.6)] border border-red-500/10 space-y-1.5"
+                        >
+                          {/* Header: badges + timestamp */}
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded-full border font-medium ${sev.bg} ${sev.color}`}>
+                              {sevLabel}
+                            </span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full border border-border text-muted-foreground">
+                              {catLabel}
+                            </span>
+                            <span className="ml-auto text-[9px] text-muted-foreground/60">{relativeTime}</span>
+                          </div>
+                          {/* Description (truncated to 3 lines) */}
+                          <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-3">
+                            {report.description}
+                          </p>
+                          {/* ZKP badge */}
+                          <div className="flex items-center gap-1 text-[9px] text-[oklch(0.51_0.24_264/0.7)]">
+                            <ShieldCheck className="w-2.5 h-2.5" />
+                            {lang === "zh" ? "零知識證明驗證" : "ZKP verified · anonymous"}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* External links */}
             <div className="flex gap-2 pt-1">

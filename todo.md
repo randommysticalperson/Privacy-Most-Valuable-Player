@@ -88,3 +88,12 @@
 - [x] Frontend: Report count badge on Report button
 - [x] Frontend: Modal auto-submits after Semaphore proof is verified
 - [x] Vitest: 6 input validation tests in server/reports.test.ts (all passing)
+
+## Session 6 — Anonymous Reports List in Expanded Card
+- [x] Fetch reports via trpc.reports.list in ContractCard when expanded (lazy: only fires when card is open)
+- [x] Render reports list below audit records in the expanded section
+- [x] Show severity badge (color-coded), category badge, 3-line truncated description, relative timestamp
+- [x] Show loading spinner while fetching
+- [x] Show dashed empty state when no reports exist
+- [x] ZKP verified badge on each report row
+- [x] i18n labels for report list section (zh + en)
