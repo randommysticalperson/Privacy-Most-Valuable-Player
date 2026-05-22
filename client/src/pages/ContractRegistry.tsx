@@ -85,6 +85,20 @@ function ContractCard({ contract, onLookup }: { contract: ContractEntry; onLooku
     { enabled: isRealAddress && expanded, staleTime: 30_000 }
   );
 
+  // Derive whether any report is critical or high (for warning banner)
+  const hasSevereReport = reportsQuery.data?.some(
+    (r) => r.severity === "critical" || r.severity === "high"
+  ) ?? false;
+
+  // Track which report rows are expanded to full text
+  const [expandedReports, setExpandedReports] = useState<Set<number>>(new Set());
+  const toggleReportExpand = (id: number) =>
+    setExpandedReports((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+
   const copyAddress = () => {
     navigator.clipboard.writeText(contract.address);
     toast.success(lang === "zh" ? "地址已複製" : "Address copied");
@@ -108,6 +122,18 @@ function ContractCard({ contract, onLookup }: { contract: ContractEntry; onLooku
           : "border-border hover:border-[oklch(0.51_0.24_264/0.3)]"
       }`}
     >
+      {/* Severe report warning banner — shown once reports are loaded and any is critical/high */}
+      {hasSevereReport && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/25 text-[10px] text-red-400">
+          <AlertTriangle className="w-3 h-3 shrink-0" />
+          <span>
+            {lang === "zh"
+              ? "社群舉報：此合約含有高/嚴重等級漏洞警示"
+              : "Community alert: this contract has high/critical severity reports"}
+          </span>
+        </div>
+      )}
+
       {/* Header row */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0">
@@ -424,10 +450,20 @@ function ContractCard({ contract, onLookup }: { contract: ContractEntry; onLooku
                             </span>
                             <span className="ml-auto text-[9px] text-muted-foreground/60">{relativeTime}</span>
                           </div>
-                          {/* Description (truncated to 3 lines) */}
-                          <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-3">
+                          {/* Description — toggle between clamped and full */}
+                          <p className={`text-[10px] text-muted-foreground leading-relaxed ${expandedReports.has(report.id) ? "" : "line-clamp-3"}`}>
                             {report.description}
                           </p>
+                          {report.description.length > 120 && (
+                            <button
+                              onClick={() => toggleReportExpand(report.id)}
+                              className="text-[9px] text-[oklch(0.51_0.24_264/0.8)] hover:text-[oklch(0.51_0.24_264)] transition-colors"
+                            >
+                              {expandedReports.has(report.id)
+                                ? (lang === "zh" ? "收起" : "Show less")
+                                : (lang === "zh" ? "展開全文" : "Read more")}
+                            </button>
+                          )}
                           {/* ZKP badge */}
                           <div className="flex items-center gap-1 text-[9px] text-[oklch(0.51_0.24_264/0.7)]">
                             <ShieldCheck className="w-2.5 h-2.5" />
@@ -484,8 +520,31 @@ export default function ContractRegistry({ onBack }: ContractRegistryProps) {
   const [riskFilter, setRiskFilter] = useState<RiskLevel | "All">("All");
   const [complianceFilter, setComplianceFilter] = useState<ComplianceTag | "All">("All");
   const [showFilters, setShowFilters] = useState(false);
+  const [sortBy, setSortBy] = useState<"default" | "reports">("default");
   const [lookupAddress, setLookupAddress] = useState<string | undefined>(undefined);
   const lookupPanelRef = useRef<HTMLDivElement>(null);
+
+  // Fetch report counts for all real-address contracts when sort=reports is active
+  const realAddresses = useMemo(
+    () => CONTRACT_REGISTRY.filter((c) => c.address !== "0x0000000000000000000000000000000000000000").map((c) => c.address),
+    []
+  );
+  // We batch-fetch counts only when sort is active to avoid unnecessary requests
+  const reportCountQueries = realAddresses.map((addr) =>
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    trpc.reports.count.useQuery(
+      { contractAddress: addr },
+      { enabled: sortBy === "reports", staleTime: 60_000 }
+    )
+  );
+  const reportCountMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    realAddresses.forEach((addr, i) => {
+      map[addr.toLowerCase()] = reportCountQueries[i].data?.count ?? 0;
+    });
+    return map;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [realAddresses, ...reportCountQueries.map((q) => q.data?.count)]);
 
   const handleCardLookup = (address: string) => {
     setLookupAddress(address);
@@ -495,10 +554,17 @@ export default function ContractRegistry({ onBack }: ContractRegistryProps) {
     }, 50);
   };
 
-  const filtered = useMemo(
-    () => filterContracts(CONTRACT_REGISTRY, query, categoryFilter, riskFilter, complianceFilter),
-    [query, categoryFilter, riskFilter, complianceFilter]
-  );
+  const filtered = useMemo(() => {
+    const base = filterContracts(CONTRACT_REGISTRY, query, categoryFilter, riskFilter, complianceFilter);
+    if (sortBy === "reports") {
+      return [...base].sort(
+        (a, b) =>
+          (reportCountMap[b.address.toLowerCase()] ?? 0) -
+          (reportCountMap[a.address.toLowerCase()] ?? 0)
+      );
+    }
+    return base;
+  }, [query, categoryFilter, riskFilter, complianceFilter, sortBy, reportCountMap]);
 
   const riskCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -597,10 +663,27 @@ export default function ContractRegistry({ onBack }: ContractRegistryProps) {
               className="border-border text-muted-foreground gap-1.5"
             >
               <Filter className="w-3.5 h-3.5" />
-              {lang === "zh" ? "篩選" : "Filter"}
+              {lang === "zh" ? "筛選" : "Filter"}
               {(categoryFilter !== "All" || complianceFilter !== "All") && (
                 <span className="w-1.5 h-1.5 rounded-full bg-[oklch(0.51_0.24_264)]" />
               )}
+            </Button>
+            {/* Sort toggle */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSortBy(sortBy === "reports" ? "default" : "reports")}
+              className={`border-border gap-1.5 transition-colors ${
+                sortBy === "reports"
+                  ? "border-red-500/40 text-red-400 bg-red-500/8"
+                  : "text-muted-foreground"
+              }`}
+              title={lang === "zh" ? "依舉報數量排序" : "Sort by report count"}
+            >
+              <ShieldAlert className="w-3.5 h-3.5" />
+              {lang === "zh"
+                ? sortBy === "reports" ? "舉報數↓" : "依舉報排序"
+                : sortBy === "reports" ? "Reports ↓" : "Sort by reports"}
             </Button>
           </div>
 
@@ -668,10 +751,16 @@ export default function ContractRegistry({ onBack }: ContractRegistryProps) {
           {/* Contract list */}
           <div className="lg:col-span-2 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-muted-foreground flex items-center gap-1.5">
                 {lang === "zh"
                   ? `顯示 ${filtered.length} / ${CONTRACT_REGISTRY.length} 份合約`
                   : `Showing ${filtered.length} of ${CONTRACT_REGISTRY.length} contracts`}
+                {sortBy === "reports" && reportCountQueries.some((q) => q.isLoading) && (
+                  <span className="flex items-center gap-1 text-[10px] text-red-400/70">
+                    <div className="w-2.5 h-2.5 border border-red-400/30 border-t-red-400/70 rounded-full animate-spin" />
+                    {lang === "zh" ? "載入舉報數量..." : "Loading counts..."}
+                  </span>
+                )}
               </span>
               {(query || categoryFilter !== "All" || riskFilter !== "All" || complianceFilter !== "All") && (
                 <button

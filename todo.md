@@ -97,3 +97,8 @@
 - [x] Show dashed empty state when no reports exist
 - [x] ZKP verified badge on each report row
 - [x] i18n labels for report list section (zh + en)
+
+## Session 7 — ContractCard UX Improvements
+- [x] Severity warning banner: show red banner on ContractCard when any report is critical/high (lazy — appears once card is expanded and reports loaded)
+- [x] Expand-full-text button on each report row (toggle clamp-3 / full text, shown only when description > 120 chars)
+- [x] Sort-by-report-count toggle button in filter bar (red active state, batch-fetches counts on demand, sorts descending)
