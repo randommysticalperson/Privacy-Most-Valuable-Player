@@ -102,3 +102,29 @@
 - [x] Severity warning banner: show red banner on ContractCard when any report is critical/high (lazy — appears once card is expanded and reports loaded)
 - [x] Expand-full-text button on each report row (toggle clamp-3 / full text, shown only when description > 120 chars)
 - [x] Sort-by-report-count toggle button in filter bar (red active state, batch-fetches counts on demand, sorts descending)
+
+## Session 8 — MetaMask Hook
+- [ ] Create client/src/hooks/useMetaMask.ts — clean hook wrapping WalletContext
+- [ ] Expose: isInstalled, isConnected, account, chainId, chainName, connect(), disconnect(), switchChain(), signMessage()
+- [ ] Add EIP-1193 event listeners (accountsChanged, chainChanged, disconnect) for live updates
+- [ ] Wire useMetaMask into WalletAuthPanel (replace direct useWallet calls where appropriate)
+- [ ] Wire useMetaMask into ReportModal (replace direct useWallet calls)
+- [ ] Export hook from client/src/hooks/index.ts
+
+## Session 9 — Burner Wallet
+- [x] Add burner wallet type to WalletContext: generate ephemeral keypair via ethers HDNodeWallet.createRandom()
+- [x] Persist encrypted private key in localStorage (AES-GCM via WebCrypto, PBKDF2 key derivation, 100k iterations)
+- [x] Add walletType: 'metamask' | 'burner' | null to WalletState
+- [x] Add createBurner() and burnWallet() actions to WalletContext
+- [x] Add signMessage() to WalletState (works for both MetaMask and burner)
+- [x] Restore burner session on page reload (decrypt from localStorage)
+- [x] Update WalletAuthPanel: show orange "建立燃燒錢包" button below MetaMask connect with divider
+- [x] Show orange ephemeral warning banner when burner wallet is active
+- [x] Show "銷毀錢包 / Burn & Forget" button (replaces disconnect for burner)
+- [x] Show wallet type badge (Burner vs MetaMask/EIP-1193) in connected state
+- [x] Hide Etherscan link for burner wallets (no on-chain activity)
+- [x] TypeScript zero errors (fixed HDNodeWallet type + Uint8Array<ArrayBuffer> WebCrypto casts)
+
+## Session 9 — Security Notes (Known Limitations)
+- [x] Burner wallet AES-GCM encryption: salt and ciphertext both stored in localStorage — this is obfuscation against casual inspection, not protection against local compromise. Acceptable for ephemeral/anonymous use case where the user is expected to burn the wallet after use.
+- [x] Etherscan link hidden for burner wallets: UX design choice to discourage on-chain activity with ephemeral keys, not because burner addresses cannot have on-chain activity.

@@ -2,6 +2,7 @@
  * WalletAuthPanel — DID/Wallet Authentication UI
  * Design: Zero-Knowledge Glass — Dark Space Glassmorphism
  * Trust colors: grey (disconnected) → amber (connecting) → emerald (connected)
+ * Supports: MetaMask (EIP-1193) + Burner Wallet (in-browser ephemeral keypair)
  * i18n: all labels via useI18n()
  */
 
@@ -10,7 +11,19 @@ import { useSemaphore } from "@/contexts/SemaphoreContext";
 import { useI18n } from "@/contexts/I18nContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Wallet, Shield, CheckCircle2, AlertCircle, Loader2, LogOut, Copy, ExternalLink } from "lucide-react";
+import {
+  Wallet,
+  Shield,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  LogOut,
+  Copy,
+  ExternalLink,
+  Flame,
+  Zap,
+  AlertTriangle,
+} from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect } from "react";
@@ -20,13 +33,24 @@ function truncateAddress(addr: string): string {
 }
 
 export default function WalletAuthPanel() {
-  const { isConnected, isConnecting, address, userInfo, hasProvider, connect, disconnect } = useWallet();
+  const {
+    isConnected,
+    isConnecting,
+    walletType,
+    address,
+    userInfo,
+    hasProvider,
+    connect,
+    disconnect,
+    createBurner,
+    burnWallet,
+  } = useWallet();
   const { createIdentityFromWallet, identityInfo, status: zkpStatus } = useSemaphore();
   const { t, lang } = useI18n();
 
   // Auto-create Semaphore identity when wallet connects
   useEffect(() => {
-    if (isConnected && address && !identityInfo && zkpStatus === 'idle') {
+    if (isConnected && address && !identityInfo && zkpStatus === "idle") {
       createIdentityFromWallet(address);
     }
   }, [isConnected, address, identityInfo, zkpStatus, createIdentityFromWallet]);
@@ -36,17 +60,31 @@ export default function WalletAuthPanel() {
     toast.success(`${label} ${lang === "zh" ? "已複製到剪貼簿" : "copied to clipboard"}`);
   };
 
-  const statusLabel = isConnecting ? t("walletConnecting") : isConnected ? t("walletConnected") : (lang === "zh" ? "未連接" : "Not connected");
+  const isBurner = walletType === "burner";
+
+  const statusLabel = isConnecting
+    ? t("walletConnecting")
+    : isConnected
+    ? isBurner
+      ? lang === "zh" ? "燃燒錢包" : "Burner"
+      : t("walletConnected")
+    : lang === "zh" ? "未連接" : "Not connected";
+
   const statusColor = isConnecting
-    ? 'text-[oklch(0.75_0.18_75)]'
+    ? "text-[oklch(0.75_0.18_75)]"
     : isConnected
-    ? 'text-[oklch(0.7_0.17_162)]'
-    : 'text-[oklch(0.6_0.01_265)]';
+    ? isBurner
+      ? "text-[oklch(0.72_0.22_30)]"
+      : "text-[oklch(0.7_0.17_162)]"
+    : "text-[oklch(0.6_0.01_265)]";
+
   const statusBorder = isConnecting
-    ? 'border-[oklch(0.75_0.18_75/0.4)]'
+    ? "border-[oklch(0.75_0.18_75/0.4)]"
     : isConnected
-    ? 'border-[oklch(0.7_0.17_162/0.4)]'
-    : 'border-[oklch(0.6_0.01_265/0.3)]';
+    ? isBurner
+      ? "border-[oklch(0.72_0.22_30/0.4)]"
+      : "border-[oklch(0.7_0.17_162/0.4)]"
+    : "border-[oklch(0.6_0.01_265/0.3)]";
 
   // Step indicators
   const steps = [t("walletStepConnect"), t("walletStepVerify"), t("walletStepDID"), t("walletStepZKP")];
@@ -57,24 +95,32 @@ export default function WalletAuthPanel() {
     (i === 3 && !!identityInfo);
   const stepActive = (i: number) =>
     (i === 0 && isConnecting) ||
-    (i === 3 && zkpStatus === 'creating-identity');
+    (i === 3 && zkpStatus === "creating-identity");
 
   return (
     <div className="glass-panel p-6 space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${statusBorder} ${statusColor}`}>
-            <Wallet className="w-5 h-5" />
+          <div
+            className={`w-10 h-10 rounded-xl flex items-center justify-center border ${statusBorder} ${statusColor}`}
+          >
+            {isBurner ? <Flame className="w-5 h-5" /> : <Wallet className="w-5 h-5" />}
           </div>
           <div>
-            <h3 className="font-semibold text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            <h3
+              className="font-semibold text-sm"
+              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+            >
               {t("walletTitle")}
             </h3>
             <p className="text-xs text-muted-foreground">{t("walletSubtitle")}</p>
           </div>
         </div>
-        <Badge variant="outline" className={`text-xs ${statusColor} ${statusBorder} border`}>
+        <Badge
+          variant="outline"
+          className={`text-xs ${statusColor} ${statusBorder} border`}
+        >
           {statusLabel}
         </Badge>
       </div>
@@ -83,30 +129,54 @@ export default function WalletAuthPanel() {
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         {steps.map((step, i) => (
           <div key={step} className="flex items-center gap-1">
-            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border transition-all duration-300 ${
-              stepDone(i)
-                ? 'bg-[oklch(0.7_0.17_162/0.2)] border-[oklch(0.7_0.17_162/0.5)] text-[oklch(0.7_0.17_162)]'
-                : stepActive(i)
-                ? 'bg-[oklch(0.75_0.18_75/0.2)] border-[oklch(0.75_0.18_75/0.5)] text-[oklch(0.75_0.18_75)]'
-                : 'border-[oklch(1_0_0/0.1)] text-muted-foreground'
-            }`}>
-              {stepDone(i) ? '✓' : i + 1}
+            <div
+              className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border transition-all duration-300 ${
+                stepDone(i)
+                  ? "bg-[oklch(0.7_0.17_162/0.2)] border-[oklch(0.7_0.17_162/0.5)] text-[oklch(0.7_0.17_162)]"
+                  : stepActive(i)
+                  ? "bg-[oklch(0.75_0.18_75/0.2)] border-[oklch(0.75_0.18_75/0.5)] text-[oklch(0.75_0.18_75)]"
+                  : "border-[oklch(1_0_0/0.1)] text-muted-foreground"
+              }`}
+            >
+              {stepDone(i) ? "✓" : i + 1}
             </div>
-            <span className={stepDone(i) ? 'text-[oklch(0.7_0.17_162)]' : ''}>{step}</span>
+            <span className={stepDone(i) ? "text-[oklch(0.7_0.17_162)]" : ""}>{step}</span>
             {i < steps.length - 1 && <div className="w-4 h-px bg-border" />}
           </div>
         ))}
       </div>
 
-      {/* No provider warning */}
-      {!hasProvider && (
+      {/* Burner wallet ephemeral warning */}
+      {isBurner && isConnected && (
+        <div className="flex items-start gap-2 p-3 rounded-lg bg-[oklch(0.72_0.22_30/0.08)] border border-[oklch(0.72_0.22_30/0.3)]">
+          <AlertTriangle className="w-4 h-4 text-[oklch(0.72_0.22_30)] mt-0.5 shrink-0" />
+          <div className="space-y-1">
+            <p className="text-xs text-[oklch(0.72_0.22_30)] font-medium">
+              {lang === "zh" ? "燃燒錢包 — 僅存在於此瀏覽器" : "Burner Wallet — exists only in this browser"}
+            </p>
+            <p className="text-[10px] text-[oklch(0.72_0.22_30/0.8)]">
+              {lang === "zh"
+                ? "私鑰以 AES-GCM 加密儲存於 localStorage。關閉分頁不會刪除它，請手動點擊「銷毀」。"
+                : "Private key is AES-GCM encrypted in localStorage. Closing the tab does NOT delete it — click Burn to wipe it."}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* No MetaMask provider notice (shown only when disconnected) */}
+      {!hasProvider && !isConnected && (
         <div className="flex items-start gap-2 p-3 rounded-lg bg-[oklch(0.65_0.22_25/0.1)] border border-[oklch(0.65_0.22_25/0.3)]">
           <AlertCircle className="w-4 h-4 text-[oklch(0.65_0.22_25)] mt-0.5 shrink-0" />
           <p className="text-xs text-[oklch(0.65_0.22_25)]">
-            {t("walletNotDetected")}{' '}
-            <a href="https://metamask.io" target="_blank" rel="noopener noreferrer" className="underline">
+            {t("walletNotDetected")}{" "}
+            <a
+              href="https://metamask.io"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+            >
               MetaMask
-            </a>{' '}
+            </a>{" "}
             {t("walletInstallLink")}
           </p>
         </div>
@@ -118,6 +188,8 @@ export default function WalletAuthPanel() {
           <p className="text-xs text-muted-foreground leading-relaxed">
             {t("walletDesc")}
           </p>
+
+          {/* MetaMask connect */}
           <Button
             onClick={connect}
             className="w-full bg-[oklch(0.51_0.24_264)] hover:bg-[oklch(0.55_0.24_264)] text-white font-medium"
@@ -126,9 +198,37 @@ export default function WalletAuthPanel() {
             <Wallet className="w-4 h-4 mr-2" />
             {t("walletConnect")}
           </Button>
-          <p className="text-[10px] text-center text-muted-foreground">
-            {t("walletSupports")}
-          </p>
+
+          {/* Divider */}
+          <div className="flex items-center gap-2">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-[10px] text-muted-foreground">
+              {lang === "zh" ? "或" : "or"}
+            </span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          {/* Burner wallet create */}
+          <Button
+            onClick={createBurner}
+            variant="outline"
+            className="w-full border-[oklch(0.72_0.22_30/0.4)] text-[oklch(0.72_0.22_30)] hover:bg-[oklch(0.72_0.22_30/0.08)] hover:border-[oklch(0.72_0.22_30/0.6)] font-medium"
+            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+          >
+            <Flame className="w-4 h-4 mr-2" />
+            {lang === "zh" ? "建立燃燒錢包（免安裝）" : "Create Burner Wallet (no install)"}
+          </Button>
+
+          <div className="space-y-1">
+            <p className="text-[10px] text-center text-muted-foreground">
+              {t("walletSupports")}
+            </p>
+            <p className="text-[10px] text-center text-muted-foreground/60">
+              {lang === "zh"
+                ? "燃燒錢包：在瀏覽器中即時生成匿名金鑰對，無需安裝任何擴充套件"
+                : "Burner Wallet: generates an anonymous keypair instantly in-browser, no extension needed"}
+            </p>
+          </div>
         </div>
       )}
 
@@ -138,7 +238,9 @@ export default function WalletAuthPanel() {
           <Loader2 className="w-8 h-8 text-[oklch(0.75_0.18_75)] animate-spin" />
           <p className="text-sm text-[oklch(0.75_0.18_75)]">{t("walletConnecting")}</p>
           <p className="text-xs text-muted-foreground text-center max-w-xs">
-            {lang === "zh" ? "請在您的錢包擴充套件中批准連接請求。" : "Please approve the connection request in your wallet extension."}
+            {lang === "zh"
+              ? "正在生成您的匿名錢包..."
+              : "Generating your anonymous wallet..."}
           </p>
         </div>
       )}
@@ -151,6 +253,21 @@ export default function WalletAuthPanel() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-3"
           >
+            {/* Wallet type badge */}
+            <div className="flex items-center gap-2">
+              {isBurner ? (
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-[oklch(0.72_0.22_30/0.1)] border border-[oklch(0.72_0.22_30/0.3)] text-[10px] text-[oklch(0.72_0.22_30)]">
+                  <Flame className="w-3 h-3" />
+                  {lang === "zh" ? "燃燒錢包（臨時）" : "Burner Wallet (ephemeral)"}
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-[oklch(0.51_0.24_264/0.1)] border border-[oklch(0.51_0.24_264/0.3)] text-[10px] text-[oklch(0.51_0.24_264)]">
+                  <Zap className="w-3 h-3" />
+                  MetaMask / EIP-1193
+                </div>
+              )}
+            </div>
+
             {/* Address */}
             <div className="p-3 rounded-lg bg-[oklch(0.7_0.17_162/0.08)] border border-[oklch(0.7_0.17_162/0.25)]">
               <div className="flex items-center justify-between mb-1">
@@ -208,7 +325,7 @@ export default function WalletAuthPanel() {
               <div className="p-3 rounded-lg bg-[oklch(0.75_0.18_75/0.08)] border border-[oklch(0.75_0.18_75/0.25)]">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                    {lang === "zh" ? "Semaphore 承訾値" : "Semaphore Commitment"}
+                    {lang === "zh" ? "Semaphore 承諾值" : "Semaphore Commitment"}
                   </span>
                   <CheckCircle2 className="w-3.5 h-3.5 text-[oklch(0.75_0.18_75)]" />
                 </div>
@@ -224,32 +341,60 @@ export default function WalletAuthPanel() {
                   </button>
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-1">
-                  {lang === "zh" ? "僅公開承訾値——私鑰永不暴露" : "Only commitment is public — private key never exposed"}
+                  {lang === "zh"
+                    ? "僅公開承諾值——私鑰永不暴露"
+                    : "Only commitment is public — private key never exposed"}
                 </p>
               </div>
             )}
 
-            {/* Etherscan link */}
-            <div className="flex items-center justify-end text-xs text-muted-foreground">
-              <a
-                href={`https://etherscan.io/address/${address}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 hover:text-foreground transition-colors"
-              >
-                {lang === "zh" ? "在 Etherscan 查看" : "View on Etherscan"} <ExternalLink className="w-3 h-3" />
-              </a>
-            </div>
+            {/* Etherscan link (not shown for burner — no on-chain activity) */}
+            {!isBurner && (
+              <div className="flex items-center justify-end text-xs text-muted-foreground">
+                <a
+                  href={`https://etherscan.io/address/${address}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 hover:text-foreground transition-colors"
+                >
+                  {lang === "zh" ? "在 Etherscan 查看" : "View on Etherscan"}{" "}
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+            )}
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={disconnect}
-              className="w-full border-[oklch(0.65_0.22_25/0.3)] text-[oklch(0.65_0.22_25)] hover:bg-[oklch(0.65_0.22_25/0.1)]"
-            >
-              <LogOut className="w-3.5 h-3.5 mr-2" />
-              {t("disconnect")}
-            </Button>
+            {/* Action buttons */}
+            {isBurner ? (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={burnWallet}
+                  className="flex-1 border-[oklch(0.65_0.25_20/0.4)] text-[oklch(0.65_0.25_20)] hover:bg-[oklch(0.65_0.25_20/0.1)] hover:border-[oklch(0.65_0.25_20/0.6)]"
+                >
+                  <Flame className="w-3.5 h-3.5 mr-2" />
+                  {lang === "zh" ? "銷毀錢包" : "Burn & Forget"}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={disconnect}
+                  className="border-border text-muted-foreground hover:bg-muted/20"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={disconnect}
+                className="w-full border-[oklch(0.65_0.22_25/0.3)] text-[oklch(0.65_0.22_25)] hover:bg-[oklch(0.65_0.22_25/0.1)]"
+              >
+                <LogOut className="w-3.5 h-3.5 mr-2" />
+                {t("disconnect")}
+              </Button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
