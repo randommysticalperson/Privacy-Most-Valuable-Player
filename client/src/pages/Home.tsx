@@ -21,10 +21,11 @@ import SteganographyPanel from "@/components/SteganographyPanel";
 import HomomorphicPanel from "@/components/HomomorphicPanel";
 import { type ForumThread, type ForumPost, type ThreadCategory } from "@/lib/forumStore";
 import ContractRegistry from "@/pages/ContractRegistry";
+import About from "@/pages/About";
 import { I18nProvider, useI18n } from "@/contexts/I18nContext";
 
 type ActiveTool = "wallet" | "zkp" | "encrypt" | "ipfs" | "dp" | "stego" | "he";
-type ActiveView = "forum" | "tools" | "wallet" | "contracts";
+type ActiveView = "forum" | "tools" | "wallet" | "contracts" | "about";
 
 function ForumApp() {
   const { t, lang } = useI18n();
@@ -112,11 +113,11 @@ function ForumApp() {
               setActiveView("forum");
             }}
             onToolSelect={handleToolSelect}
-            activeView={activeView === "wallet" ? "tools" : activeView as "forum" | "tools" | "contracts"}
-            onViewChange={v => {
-              setActiveView(v as ActiveView);
-              if (v === "forum") setSelectedThread(null);
-            }}
+              activeView={activeView === "wallet" ? "tools" : activeView as "forum" | "tools" | "contracts" | "about"}
+              onViewChange={v => {
+                setActiveView(v as ActiveView);
+                if (v === "forum") setSelectedThread(null);
+              }}
           />
         </aside>
 
@@ -170,6 +171,11 @@ function ForumApp() {
           {/* CONTRACTS VIEW */}
           {activeView === "contracts" && (
             <ContractRegistry onBack={() => setActiveView("forum")} />
+          )}
+
+          {/* ABOUT VIEW */}
+          {activeView === "about" && (
+            <About onBack={() => setActiveView("forum")} />
           )}
 
           {/* WALLET VIEW — mobile only */}

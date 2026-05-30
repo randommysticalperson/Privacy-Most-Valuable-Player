@@ -103,13 +103,13 @@
 - [x] Expand-full-text button on each report row (toggle clamp-3 / full text, shown only when description > 120 chars)
 - [x] Sort-by-report-count toggle button in filter bar (red active state, batch-fetches counts on demand, sorts descending)
 
-## Session 8 — MetaMask Hook
-- [ ] Create client/src/hooks/useMetaMask.ts — clean hook wrapping WalletContext
-- [ ] Expose: isInstalled, isConnected, account, chainId, chainName, connect(), disconnect(), switchChain(), signMessage()
-- [ ] Add EIP-1193 event listeners (accountsChanged, chainChanged, disconnect) for live updates
-- [ ] Wire useMetaMask into WalletAuthPanel (replace direct useWallet calls where appropriate)
-- [ ] Wire useMetaMask into ReportModal (replace direct useWallet calls)
-- [ ] Export hook from client/src/hooks/index.ts
+## Session 8 — MetaMask Hook (superseded by Session 9 WalletContext rewrite)
+- [x] Create client/src/hooks/useMetaMask.ts — superseded; useWallet() from WalletContext already exposes all needed fields
+- [x] Expose: isInstalled, isConnected, account, chainId, chainName, connect(), disconnect(), switchChain(), signMessage() — covered by WalletContext
+- [x] Add EIP-1193 event listeners (accountsChanged, chainChanged, disconnect) — already in WalletContext
+- [x] Wire useMetaMask into WalletAuthPanel — WalletAuthPanel uses useWallet() directly
+- [x] Wire useMetaMask into ReportModal — ReportModal uses useWallet() directly
+- [x] Export hook from client/src/hooks/index.ts — not needed; useWallet() is the canonical hook
 
 ## Session 9 — Burner Wallet
 - [x] Add burner wallet type to WalletContext: generate ephemeral keypair via ethers HDNodeWallet.createRandom()

@@ -3,7 +3,7 @@
  * i18n: all labels via useI18n()
  */
 
-import { Home, TrendingUp, Users, Lock, Eye, Cpu, Database, BarChart2, Zap, Shield, FileText } from "lucide-react";
+import { Home, TrendingUp, Users, Lock, Eye, Cpu, Database, BarChart2, Zap, Shield, FileText, Info } from "lucide-react";
 import { CATEGORY_COLORS, type ThreadCategory } from "@/lib/forumStore";
 import { useI18n } from "@/contexts/I18nContext";
 
@@ -13,14 +13,14 @@ interface ForumSidebarProps {
   activeCategory: ThreadCategory | null;
   onCategorySelect: (cat: ThreadCategory | null) => void;
   onToolSelect: (tool: string) => void;
-  activeView: "forum" | "tools" | "contracts";
-  onViewChange: (v: "forum" | "tools" | "contracts") => void;
+  activeView: "forum" | "tools" | "contracts" | "about";
+  onViewChange: (v: "forum" | "tools" | "contracts" | "about") => void;
 }
 
 export default function ForumSidebar({
   activeCategory, onCategorySelect, onToolSelect, activeView, onViewChange,
 }: ForumSidebarProps) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   const CATEGORY_LABELS_I18N: Record<ThreadCategory, string> = {
     "zero-knowledge": t("catZkp"),
@@ -150,7 +150,19 @@ export default function ForumSidebar({
         </div>
       </div>
 
-      <div className="mt-auto pt-3 px-2">
+      <div className="mt-auto pt-3 px-2 space-y-1.5">
+        {/* About link */}
+        <button
+          onClick={() => onViewChange("about")}
+          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors ${
+            activeView === "about"
+              ? "bg-[oklch(0.51_0.24_264/0.12)] text-[oklch(0.51_0.24_264)]"
+              : "text-muted-foreground hover:text-foreground hover:bg-[oklch(1_0_0/0.05)]"
+          }`}
+        >
+          <Info className="w-3.5 h-3.5" />
+          {lang === "zh" ? "關於" : "About"}
+        </button>
         <p className="text-[9px] text-muted-foreground leading-relaxed">
           {t("appTagline")}
         </p>
